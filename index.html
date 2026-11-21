@@ -1,0 +1,3242 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VerdantLog — Botanical &amp; Bonsai Collection Tracker</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          colors: {
+            botanical: {
+              50: '#f2fbf5',
+              100: '#e1f6e8',
+              200: '#c3ecd2',
+              300: '#94dcb0',
+              400: '#5ec387',
+              500: '#37a766',
+              600: '#278850',
+              700: '#226c42',
+              800: '#1f5637',
+              900: '#1b472f',
+              950: '#0d2819'
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #0b1410;
+      color: #e6f0ea;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 29, 22, 0.6);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(55, 167, 102, 0.35);
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(94, 195, 135, 0.55);
+    }
+    .card-glow {
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+    .card-glow:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(94, 195, 135, 0.28);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-botanical-500 selection:text-white">
+
+  <!-- Top Header Bar -->
+  <header class="sticky top-0 z-30 border-b border-emerald-900/60 bg-[#0d1914]/95 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- Brand & Mode Status -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-950/60 border border-emerald-400/30">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 22V11m0 0C12 7 15.5 4 20 4c0 4.5-3 8-8 7zm0 0C12 7 8.5 4 4 4c0 4.5 3 8 8 7z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">VerdantLog</h1>
+            <span id="connectionBadge" class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/90 text-emerald-300 border border-emerald-700/50">Local Storage + Web API</span>
+          </div>
+          <p class="text-xs text-emerald-300/70 hidden sm:block">Botanical, Bonsai, Terrarium &amp; Balcony Care Tracker</p>
+        </div>
+      </div>
+
+      <!-- Seasonal Mode Toggle & Primary Actions -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <!-- Seasonal Toggle Pill -->
+        <div class="flex items-center bg-[#13261d] p-1 rounded-xl border border-emerald-800/60" role="group" aria-label="Seasonal Mode">
+          <button type="button" id="btnSeasonSummer" onclick="setSeasonMode('summer')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
+            <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+            </svg>
+            <span>Summer Mode</span>
+          </button>
+          <button type="button" id="btnSeasonWinter" onclick="setSeasonMode('winter')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
+            <svg class="w-4 h-4 text-sky-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M17 5l-5 5-5-5M17 19l-5-5-5 5M2 12h20M5 7l5 5-5 5M19 7l-5 5 5 5"/>
+            </svg>
+            <span>Winter Mode</span>
+          </button>
+        </div>
+
+        <!-- Sync Web Photos Button -->
+        <button type="button" onclick="syncAllWikipediaPhotos()" id="btnSyncPhotos" class="px-3 py-2 rounded-xl text-xs font-medium bg-[#152a20] hover:bg-[#1c382b] text-emerald-200 border border-emerald-800/60 flex items-center gap-1.5 transition" title="Fetch real botanical photos from Wikipedia/Wikimedia for your plants">
+          <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          <span class="hidden md:inline">Load Web Photos</span>
+        </button>
+
+        <!-- Add by Photo Button -->
+        <button type="button" onclick="openPhotoIdentifyModal()" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-950/60 flex items-center gap-1.5 transition" title="Upload or snap a plant photo to add it to your library">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>Add by Photo</span>
+        </button>
+
+        <!-- Add New Plant Button -->
+        <button type="button" onclick="openPlantModal()" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-950/60 flex items-center gap-1.5 transition">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+          <span>Add Plant + Web Lookup</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs & Seasonal Alert Banner -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-2 border-t border-emerald-950/80 pt-2 pb-2">
+      <nav class="flex items-center gap-1" aria-label="Main Views">
+        <button type="button" id="tabBtnRoster" onclick="switchMainView('roster')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Plant Roster</span>
+          <span id="rosterCountBadge" class="ml-1 px-1.5 py-0.2 rounded-full text-[11px] bg-emerald-900/80 text-emerald-200">19</span>
+        </button>
+        <button type="button" id="tabBtnLogs" onclick="switchMainView('logs')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          <span>Global Event Log</span>
+          <span id="logCountBadge" class="ml-1 px-1.5 py-0.2 rounded-full text-[11px] bg-emerald-900/80 text-emerald-200">0</span>
+        </button>
+        <button type="button" id="tabBtnPython" onclick="switchMainView('python')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span>Local Python Server &amp; Backup</span>
+        </button>
+      </nav>
+
+      <!-- Active Season Guidance Pill -->
+      <div id="seasonBannerText" class="text-xs px-3 py-1 rounded-lg bg-sky-950/70 border border-sky-700/40 text-sky-200 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+        <span><strong>Winter Mode Active:</strong> Extended watering intervals; protect <em>Delonix regia</em> &lt;10–12°C; Blueberry pruning in Jan–Feb.</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-5">
+
+    <!-- ==================== VIEW 1: PLANT ROSTER ==================== -->
+    <section id="viewRoster" class="space-y-5">
+      <!-- KPI Summary Strip -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-[#112119] border border-emerald-900/50 rounded-2xl p-3.5 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-emerald-300/70 font-medium">Total Collection</p>
+            <p id="kpiTotalPlants" class="text-2xl font-bold text-white mt-0.5">19</p>
+            <p class="text-[11px] text-emerald-400/70 mt-0.5">6 botanical groups</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-800/50 flex items-center justify-center text-emerald-400">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12m0 0C12 7 16 4 21 4c0 5-4 8-9 8zm0 0C12 7 8 4 3 4c0 5 4 8 9 8z"/></svg>
+          </div>
+        </div>
+
+        <div class="bg-[#112119] border border-emerald-900/50 rounded-2xl p-3.5 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-amber-300/80 font-medium">Timed Reminders</p>
+            <p id="kpiDueReminders" class="text-2xl font-bold text-amber-300 mt-0.5">0</p>
+            <p id="kpiSeasonSub" class="text-[11px] text-amber-200/60 mt-0.5">Pruning, wire &amp; repot tasks</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-amber-950/60 border border-amber-700/40 flex items-center justify-center text-amber-400">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          </div>
+        </div>
+
+        <div class="bg-[#112119] border border-emerald-900/50 rounded-2xl p-3.5 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-sky-300/80 font-medium">Special Water Protocol</p>
+            <p id="kpiSpecialWater" class="text-2xl font-bold text-sky-300 mt-0.5">7</p>
+            <p class="text-[11px] text-sky-200/60 mt-0.5">Distilled / pH 5.2 Adjusted</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-sky-950/60 border border-sky-700/40 flex items-center justify-center text-sky-300">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6m-5 0v6.5L5.5 17A2 2 0 007.2 20h9.6a2 2 0 001.7-3L14 9.5V3"/></svg>
+          </div>
+        </div>
+
+        <div class="bg-[#112119] border border-emerald-900/50 rounded-2xl p-3.5 flex items-center justify-between">
+          <div>
+            <p class="text-xs text-purple-300/80 font-medium">Logged Care Events</p>
+            <p id="kpiTotalLogs" class="text-2xl font-bold text-purple-200 mt-0.5">0</p>
+            <p class="text-[11px] text-purple-300/60 mt-0.5">Pruning, wiring, soil, pH</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-purple-950/60 border border-purple-700/40 flex items-center justify-center text-purple-300">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search, Category Pills & Water Filter Bar -->
+      <div class="bg-[#112119] border border-emerald-900/60 rounded-2xl p-3.5 space-y-3">
+        <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <!-- Search Input -->
+          <div class="relative flex-1">
+            <svg class="w-4 h-4 text-emerald-400/70 absolute left-3.5 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="text" id="rosterSearchInput" oninput="renderRoster()" placeholder="Search plants by name, scientific name, soil mix (e.g. Deshanit, perlite), or log notes..." class="w-full pl-10 pr-4 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white placeholder-emerald-300/40 focus:outline-none focus:border-emerald-500"/>
+          </div>
+
+          <!-- Secondary Filters -->
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="waterTypeFilter" onchange="renderRoster()" aria-label="Filter by Water Type" class="px-3 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-xs text-emerald-100 focus:outline-none focus:border-emerald-500">
+              <option value="all">All Water Types</option>
+              <option value="Distilled Only">Distilled Water Only</option>
+              <option value="pH 5.2 Adjusted">pH 5.2 Vinegar Adjusted</option>
+              <option value="Tap / Filtered">Standard Tap / Filtered</option>
+            </select>
+
+            <select id="dueStatusFilter" onchange="renderRoster()" aria-label="Filter by Timed Reminders" class="px-3 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-xs text-emerald-100 focus:outline-none focus:border-emerald-500">
+              <option value="all">All Plants</option>
+              <option value="has-reminder">Has Timed Reminder</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Category Filter Pills -->
+        <div id="categoryPillsContainer" class="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scroll"></div>
+      </div>
+
+      <!-- Local Weather Events & Timed Reminders Bar -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <!-- Herzliya Weather Events Card -->
+        <div id="weatherEventsCard" class="bg-[#112119] border border-emerald-900/60 rounded-2xl p-3.5 flex flex-col justify-between gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+              <h3 class="text-xs sm:text-sm font-bold text-white">Local Weather Events (Herzliya)</h3>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="weatherTempPill" class="text-xs font-mono px-2 py-0.5 rounded-lg bg-[#0b1611] text-sky-200 border border-sky-800/50">Loading...</span>
+              <button type="button" onclick="fetchLocalWeatherEvents()" class="text-[11px] px-2 py-0.5 rounded-lg bg-[#162d22] hover:bg-[#1e3d2e] text-emerald-200 border border-emerald-800/50">Refresh</button>
+            </div>
+          </div>
+          <div id="weatherAlertsList" class="text-xs text-emerald-100/85 space-y-1">
+            Checking 7-day temperature &amp; rain forecast for plant sensitivity...
+          </div>
+        </div>
+
+        <!-- Upcoming Timed Reminders Card (with One-Tap .ics Calendar Export) -->
+        <div id="upcomingRemindersCard" class="bg-[#112119] border border-emerald-900/60 rounded-2xl p-3.5 flex flex-col justify-between gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <h3 class="text-xs sm:text-sm font-bold text-white">Timed Reminders (One-Tap iPhone Calendar)</h3>
+            </div>
+            <button type="button" onclick="openQuickReminderModal()" class="text-[11px] px-2.5 py-1 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white font-semibold">+ Add Reminder</button>
+          </div>
+          <div id="upcomingRemindersList" class="space-y-1.5 max-h-28 overflow-y-auto custom-scroll"></div>
+        </div>
+      </div>
+
+      <!-- Plant Cards Grid -->
+      <div id="plantsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- ==================== VIEW 2: GLOBAL EVENT LOG ==================== -->
+    <section id="viewLogs" class="hidden space-y-5">
+      <div class="bg-[#112119] border border-emerald-900/60 rounded-2xl p-4 sm:p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-900/50 pb-4">
+          <div>
+            <h2 class="text-lg font-bold text-white">Chronological Plant Care &amp; Free-Text Event Log</h2>
+            <p class="text-xs text-emerald-300/70">Record fertilizing, soil/pot changes, pruning, bonsai wiring, pH flushing, or free-form observations across your collection.</p>
+          </div>
+          <button type="button" onclick="openQuickLogModal()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 self-start sm:self-auto">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 4v16m8-8H4"/></svg>
+            <span>Log New Event</span>
+          </button>
+        </div>
+
+        <!-- Log Filters -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input type="text" id="globalLogSearch" oninput="renderGlobalLogs()" placeholder="Search log notes (e.g., guy-wire, sulfur, peduncle, repot)..." class="px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white placeholder-emerald-300/40 focus:outline-none focus:border-emerald-500"/>
+          <select id="globalLogPlantFilter" onchange="renderGlobalLogs()" aria-label="Filter logs by plant" class="px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-emerald-100 focus:outline-none focus:border-emerald-500">
+            <option value="all">All Plants</option>
+          </select>
+          <select id="globalLogTypeFilter" onchange="renderGlobalLogs()" aria-label="Filter logs by event type" class="px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-emerald-100 focus:outline-none focus:border-emerald-500">
+            <option value="all">All Event Types</option>
+            <option value="Watering">Watering</option>
+            <option value="Fertilizing">Fertilizing</option>
+            <option value="Soil / Repotting">Soil / Repotting</option>
+            <option value="Pruning">Pruning</option>
+            <option value="Wiring / Styling">Wiring / Styling</option>
+            <option value="Soil / pH Treatment">Soil / pH Treatment</option>
+            <option value="Propagation">Propagation</option>
+            <option value="Note / Diagnosis">Note / Free Text</option>
+          </select>
+        </div>
+
+        <!-- Global Logs List -->
+        <div id="globalLogsList" class="space-y-2.5 pt-2"></div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 3: LOCAL PYTHON SERVER & BACKUP ==================== -->
+    <section id="viewPython" class="hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- JSON Backup / Restore Card -->
+        <div class="bg-[#112119] border border-emerald-900/60 rounded-2xl p-5 space-y-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-emerald-900/60 border border-emerald-700/50 flex items-center justify-center text-emerald-300">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-white">Database Sync &amp; Backup</h3>
+              <p class="text-xs text-emerald-300/70">Export or import your full collection &amp; logs</p>
+            </div>
+          </div>
+
+          <p class="text-xs text-emerald-100/80 leading-relaxed">
+            Your changes save automatically in your browser and can be exported as a JSON snapshot to import directly into your local Python SQLite server (<code class="text-emerald-300 font-mono">app.py</code>) or across your PC and iPhone.
+          </p>
+
+          <div class="space-y-2.5 pt-1">
+            <button type="button" onclick="exportCollectionJSON()" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center gap-2 transition">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Export Collection &amp; Logs (.json)</span>
+            </button>
+
+            <label class="w-full py-2.5 px-4 rounded-xl bg-[#172e23] hover:bg-[#1e3b2d] text-emerald-200 border border-emerald-800/60 text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              <span>Import Collection (.json)</span>
+              <input type="file" id="importJsonInput" accept=".json,application/json" onchange="importCollectionJSON(event)" class="hidden"/>
+            </label>
+
+            <button type="button" onclick="openResetConfirmModal()" class="w-full py-2 px-4 rounded-xl bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 text-xs font-medium transition">
+              Reset to Default 19-Plant Roster
+            </button>
+          </div>
+        </div>
+
+        <!-- Local Python FastAPI Architecture Overview -->
+        <div class="lg:col-span-2 bg-[#112119] border border-emerald-900/60 rounded-2xl p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-base font-bold text-white">Running Locally on Windows PC &amp; iPhone (FastAPI + SQLite)</h3>
+              <p class="text-xs text-emerald-300/70">Included in <code class="text-emerald-300 font-mono">plant_tracker_local.zip</code></p>
+            </div>
+            <button type="button" onclick="copyPythonCommand()" class="px-3 py-1.5 rounded-lg bg-emerald-900/60 hover:bg-emerald-800/70 text-emerald-200 text-xs font-mono border border-emerald-700/50 transition">
+              Copy Launch Commands
+            </button>
+          </div>
+
+          <div class="bg-[#09120e] border border-emerald-900/80 rounded-xl p-3.5 font-mono text-xs text-emerald-200 space-y-1.5 overflow-x-auto">
+            <div class="text-emerald-400/70"># 1. Unzip plant_tracker_local.zip and install FastAPI + Uvicorn</div>
+            <div>pip install -r requirements.txt</div>
+            <div class="text-emerald-400/70 pt-1"># 2. Start the local SQLite server (accessible on PC &amp; iPhone over Wi-Fi)</div>
+            <div>python app.py</div>
+            <div class="text-emerald-400/70 pt-1"># Open http://localhost:8000 on PC or http://&lt;PC-LAN-IP&gt;:8000 on iPhone</div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="p-3 rounded-xl bg-[#0c1812] border border-emerald-900/50 space-y-1">
+              <p class="font-semibold text-emerald-300">Web Plant Discovery Engine</p>
+              <p class="text-emerald-100/75 leading-relaxed">
+                Queries Wikipedia REST API, MediaWiki Action API, and iNaturalist Taxa API to fetch species photos, scientific names, and tailored substrate/sun/seasonal watering recommendations.
+              </p>
+            </div>
+            <div class="p-3 rounded-xl bg-[#0c1812] border border-emerald-900/50 space-y-1">
+              <p class="font-semibold text-emerald-300">SQLite + Optional Gemini AI Enrichment</p>
+              <p class="text-emerald-100/75 leading-relaxed">
+                Stores all plants, uploaded photos, and free-text event logs in <code class="font-mono text-emerald-200">plants.db</code>. Set <code class="font-mono text-emerald-200">GEMINI_API_KEY</code> in your environment if you want AI-synthesized care sheets for rare species.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODAL 1: PLANT DETAIL & EVENT LOG DRAWER ==================== -->
+  <div id="plantDetailModal" class="fixed inset-0 z-40 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div class="bg-[#0f1e17] border border-emerald-800/70 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+      <!-- Modal Header -->
+      <div class="px-5 py-4 border-b border-emerald-900/60 flex items-center justify-between gap-3 bg-[#0b1611]">
+        <div class="flex items-center gap-3 min-w-0">
+          <span id="detailCategoryBadge" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-900/70 text-emerald-200 border border-emerald-700/50">Category</span>
+          <div class="truncate">
+            <h2 id="detailPlantName" class="text-lg sm:text-xl font-bold text-white truncate">Plant Name</h2>
+            <p id="detailScientificName" class="text-xs italic text-emerald-300/80 truncate">Scientific name</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button type="button" id="btnEditCurrentPlant" onclick="editCurrentDetailPlant()" class="px-3 py-1.5 rounded-xl bg-[#162d22] hover:bg-[#1e3d2e] text-emerald-200 border border-emerald-700/50 text-xs font-medium flex items-center gap-1.5 transition">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <span>Edit Care / Photo</span>
+          </button>
+          <button type="button" onclick="closePlantDetailModal()" aria-label="Close modal" class="p-1.5 rounded-xl bg-[#162d22] hover:bg-rose-950/80 text-emerald-200 hover:text-rose-200 border border-emerald-800/50 transition">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 overflow-y-auto custom-scroll space-y-6 flex-1">
+        <!-- Top Section: Visual + Recommended Care Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+          <!-- Left Column: Picture & Quick Actions -->
+          <div class="md:col-span-5 flex flex-col gap-3">
+            <div id="detailImageWrapper" class="relative rounded-2xl overflow-hidden bg-[#09130e] border border-emerald-900/70 h-60 flex items-center justify-center"></div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <button type="button" onclick="openQuickReminderModal(currentDetailPlantId)" class="flex-1 py-2 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                <span>Add Timed Reminder</span>
+              </button>
+
+              <label class="py-2 px-3 rounded-xl bg-[#162d22] hover:bg-[#1f3d2f] text-emerald-200 border border-emerald-800/60 text-xs font-medium flex items-center gap-1.5 cursor-pointer transition">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span>Upload Photo</span>
+                <input type="file" accept="image/*" onchange="uploadCustomPlantPhoto(event)" class="hidden"/>
+              </label>
+
+              <button type="button" onclick="fetchSinglePlantWebPhoto()" class="py-2 px-3 rounded-xl bg-[#162d22] hover:bg-[#1f3d2f] text-emerald-200 border border-emerald-800/60 text-xs font-medium flex items-center gap-1.5 transition" title="Pull species photo from Wikipedia/iNaturalist">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                <span>Web Photo</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Column: Recommended Care Sheet -->
+          <div class="md:col-span-7 space-y-3">
+            <!-- Location & Water Type Strip -->
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="detailLocationBadge" class="px-2.5 py-1 rounded-lg text-xs bg-[#14281e] text-emerald-200 border border-emerald-800/50">Location</span>
+              <span id="detailWaterBadge" class="px-2.5 py-1 rounded-lg text-xs font-medium">Water Type</span>
+              <span id="detailDueBadge" class="px-2.5 py-1 rounded-lg text-xs font-semibold">Watering Status</span>
+            </div>
+
+            <!-- Soil Mixture Card -->
+            <div class="p-3.5 rounded-xl bg-[#0b1611] border border-emerald-900/60 space-y-1">
+              <div class="flex items-center gap-1.5 text-xs font-semibold text-amber-300">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20M5 20c1-4 4-7 7-7s6 3 7 7M12 13V4m0 0L9 7m3-3l3 3"/></svg>
+                <span>Recommended Soil Mixture &amp; Substrate</span>
+              </div>
+              <p id="detailSoilText" class="text-xs sm:text-sm text-emerald-50/90 leading-relaxed"></p>
+            </div>
+
+            <!-- Sun Exposure Card -->
+            <div class="p-3.5 rounded-xl bg-[#0b1611] border border-emerald-900/60 space-y-1">
+              <div class="flex items-center gap-1.5 text-xs font-semibold text-yellow-300">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                <span>Sun Exposure &amp; Placement</span>
+              </div>
+              <p id="detailSunText" class="text-xs sm:text-sm text-emerald-50/90 leading-relaxed"></p>
+            </div>
+
+            <!-- Summer vs Winter Watering Comparison -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div id="detailSummerCard" class="p-3.5 rounded-xl border transition space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-amber-300 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/></svg>
+                    Summer Watering
+                  </span>
+                  <span id="detailSummerDays" class="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-950/80 text-amber-200">Every Xd</span>
+                </div>
+                <p id="detailSummerText" class="text-xs text-emerald-100/90 leading-relaxed"></p>
+              </div>
+
+              <div id="detailWinterCard" class="p-3.5 rounded-xl border transition space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-sky-300 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+                    Winter Watering
+                  </span>
+                  <span id="detailWinterDays" class="text-[11px] font-mono px-2 py-0.5 rounded bg-sky-950/80 text-sky-200">Every Xd</span>
+                </div>
+                <p id="detailWinterText" class="text-xs text-emerald-100/90 leading-relaxed"></p>
+              </div>
+            </div>
+
+            <!-- Notes / Botanical Reference -->
+            <div id="detailNotesBox" class="p-3 rounded-xl bg-[#0c1812] border border-emerald-900/40 text-xs text-emerald-200/80 flex items-start justify-between gap-3">
+              <div id="detailNotesContent" class="leading-relaxed"></div>
+              <a id="detailWikiLink" href="https://en.wikipedia.org" target="_blank" rel="noopener noreferrer" class="shrink-0 px-2.5 py-1 rounded-lg bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-700/50 font-medium">Reference ↗</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Section: Free-Text & Categorized Plant Event Log -->
+        <div class="border-t border-emerald-900/60 pt-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-base font-bold text-white">Plant Event Log &amp; Free-Text Journal</h3>
+              <p class="text-xs text-emerald-300/70">State any event—fertilizing, soil/pot change, pruning, bonsai wiring, pH flushing, or free-text observations.</p>
+            </div>
+          </div>
+
+          <!-- Add Event Form inside Detail Modal -->
+          <div class="bg-[#0b1611] border border-emerald-800/60 rounded-2xl p-4 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-[11px] font-medium text-emerald-300/80 mb-1">Event Category</label>
+                <select id="detailLogType" aria-label="Event Category" class="w-full px-3 py-2 rounded-xl bg-[#11221a] border border-emerald-800/60 text-xs text-white focus:outline-none focus:border-emerald-500">
+                  <option value="Note / Diagnosis">Free Text / Observation</option>
+                  <option value="Watering">Watering</option>
+                  <option value="Fertilizing">Fertilizing</option>
+                  <option value="Soil / Repotting">Soil / Pot Change</option>
+                  <option value="Pruning">Pruning / Defoliation</option>
+                  <option value="Wiring / Styling">Wiring / Guy-Wire</option>
+                  <option value="Soil / pH Treatment">pH Flush / Sulfur Treatment</option>
+                  <option value="Propagation">Propagation / Scarification</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-medium text-emerald-300/80 mb-1">Event Date</label>
+                <input type="date" id="detailLogDate" aria-label="Event Date" class="w-full px-3 py-2 rounded-xl bg-[#11221a] border border-emerald-800/60 text-xs text-white focus:outline-none focus:border-emerald-500"/>
+              </div>
+              <div class="flex items-end">
+                <button type="button" onclick="addLogFromDetailModal()" class="w-full py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 4v16m8-8H4"/></svg>
+                  <span>Add Entry to Log</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+              <div class="sm:col-span-9">
+                <label class="block text-[11px] font-medium text-emerald-300/80 mb-1">Free-Text Event Description</label>
+                <textarea id="detailLogNote" rows="2" placeholder="Write what happened (e.g. 'Repotted into 70% perlite / 30% coco coir', 'Applied diluted fertilizer with distilled water', 'Removed wire after 6 weeks')..." class="w-full px-3.5 py-2 rounded-xl bg-[#11221a] border border-emerald-800/60 text-xs sm:text-sm text-white placeholder-emerald-300/40 focus:outline-none focus:border-emerald-500"></textarea>
+              </div>
+              <div class="sm:col-span-3">
+                <label class="block text-[11px] font-medium text-emerald-300/80 mb-1">Progress Photo (Optional)</label>
+                <label class="w-full py-2 px-3 rounded-xl bg-[#11221a] hover:bg-[#193327] border border-emerald-800/60 text-xs text-emerald-200 flex items-center justify-center gap-1.5 cursor-pointer transition">
+                  <svg class="w-4 h-4 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  <span id="detailLogPhotoLabel">Attach Photo</span>
+                  <input type="file" id="detailLogPhotoInput" accept="image/*" onchange="handleDetailLogPhotoSelect(event)" class="hidden"/>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Per-Plant Timed Reminders List -->
+          <div id="detailPlantRemindersBox" class="space-y-2"></div>
+
+          <!-- Chronological Log Entries for This Plant -->
+          <div id="detailPlantLogsContainer" class="space-y-2.5"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 2: ADD / EDIT PLANT WITH WEB LOOKUP ==================== -->
+  <div id="plantFormModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div class="bg-[#0f1e17] border border-emerald-700/70 rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+      <div class="px-5 py-4 border-b border-emerald-900/60 flex items-center justify-between bg-[#0b1611]">
+        <div>
+          <h2 id="plantFormTitle" class="text-lg font-bold text-white">Add New Plant &amp; Fetch Care from Web</h2>
+          <p class="text-xs text-emerald-300/70">Search Wikipedia &amp; iNaturalist to auto-fill recommended soil, sun, and seasonal watering—or customize freely.</p>
+        </div>
+        <button type="button" onclick="closePlantModal()" aria-label="Close form" class="p-1.5 rounded-xl bg-[#162d22] hover:bg-rose-950 text-emerald-200">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto custom-scroll space-y-4 flex-1">
+        <!-- Web Lookup Bar -->
+        <div class="p-4 rounded-2xl bg-gradient-to-br from-[#132a20] to-[#0d1d16] border border-emerald-700/50 space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-emerald-200 flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+              <span>Web Botanical Lookup (Wikipedia + iNaturalist)</span>
+            </label>
+            <span id="webLookupStatus" class="text-[11px] text-emerald-300/80">Ready to search</span>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" id="webLookupQuery" onkeydown="if(event.key==='Enter'){event.preventDefault();searchWebForPlant();}" placeholder="Enter plant or tree name (e.g. Monstera deliciosa, Ficus retusa, Sarracenia, Citrus limon)..." class="flex-1 px-3.5 py-2 rounded-xl bg-[#09140f] border border-emerald-800/70 text-sm text-white placeholder-emerald-300/40 focus:outline-none focus:border-emerald-400"/>
+            <button type="button" id="btnRunWebLookup" onclick="searchWebForPlant()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 shrink-0 transition">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <span>Fetch Info from Web</span>
+            </button>
+          </div>
+
+          <!-- Search Results Candidates -->
+          <div id="webLookupResults" class="hidden space-y-2 pt-1"></div>
+        </div>
+
+        <!-- Plant Details Form -->
+        <input type="hidden" id="formPlantId" value=""/>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-medium text-emerald-200 mb-1">Common Name *</label>
+            <input type="text" id="formCommonName" placeholder="e.g. Swiss Cheese Plant" class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white focus:outline-none focus:border-emerald-500"/>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-emerald-200 mb-1">Scientific Name</label>
+            <input type="text" id="formScientificName" placeholder="e.g. Monstera deliciosa" class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white italic focus:outline-none focus:border-emerald-500"/>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-emerald-200 mb-1">Category</label>
+            <select id="formCategory" aria-label="Plant Category" class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white focus:outline-none focus:border-emerald-500">
+              <option value="Bonsai & Trees">Bonsai &amp; Trees</option>
+              <option value="Aroids & Tropicals">Aroids &amp; Tropicals</option>
+              <option value="Hoyas & Epiphytes">Hoyas &amp; Epiphytes</option>
+              <option value="Terrarium & Rare">Terrarium &amp; Rare</option>
+              <option value="Carnivorous">Carnivorous</option>
+              <option value="Balcony Fruit & Trees">Balcony Fruit &amp; Trees</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-emerald-200 mb-1">Placement / Location</label>
+            <input type="text" id="formLocation" placeholder="e.g. South Balcony / East Window / Terrarium" class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white focus:outline-none focus:border-emerald-500"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-medium text-emerald-200 mb-1">Water Protocol</label>
+            <select id="formWaterType" aria-label="Water Protocol" class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white focus:outline-none focus:border-emerald-500">
+              <option value="Tap / Filtered">Standard Tap / Filtered</option>
+              <option value="Distilled Only">Distilled / RO Water Only</option>
+              <option value="pH 5.2 Adjusted">pH 5.2 Vinegar Adjusted</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-emerald-200 mb-1">Picture (Image URL or Upload)</label>
+            <div class="flex gap-2">
+              <input type="text" id="formImageUrl" placeholder="https://... or upload file →" class="flex-1 px-3 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-xs text-white focus:outline-none focus:border-emerald-500"/>
+              <label class="px-3 py-2 rounded-xl bg-[#162d22] hover:bg-[#1f3d2f] text-emerald-200 border border-emerald-800/60 text-xs font-medium cursor-pointer shrink-0 flex items-center">
+                <span>Upload</span>
+                <input type="file" accept="image/*" onchange="handleFormImageUpload(event)" class="hidden"/>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-amber-300 mb-1">Recommended Soil Mixture *</label>
+          <textarea id="formSoilMix" rows="2" placeholder="e.g. Deshanit Professional Aroid Mix (40% orchid bark, 30% perlite, 30% coco coir)..." class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-yellow-300 mb-1">Recommended Sun Exposure *</label>
+          <textarea id="formSunExposure" rows="2" placeholder="e.g. Bright indirect light (east window) or 6+ hrs direct sun on south balcony..." class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div class="p-3 rounded-xl bg-[#0b1611] border border-amber-800/40 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold text-amber-300">Summer Watering Schedule</label>
+              <div class="flex items-center gap-1">
+                <span class="text-[11px] text-emerald-300/70">Every</span>
+                <input type="number" id="formSummerDays" min="1" max="60" value="4" aria-label="Summer watering interval in days" class="w-14 px-2 py-1 rounded bg-[#14261d] border border-emerald-700/50 text-xs text-center text-white"/>
+                <span class="text-[11px] text-emerald-300/70">days</span>
+              </div>
+            </div>
+            <textarea id="formSummerWatering" rows="2" placeholder="e.g. Every 3–4 days when top 2 cm dries..." class="w-full px-3 py-1.5 rounded-lg bg-[#112119] border border-emerald-800/50 text-xs text-white focus:outline-none"></textarea>
+          </div>
+
+          <div class="p-3 rounded-xl bg-[#0b1611] border border-sky-800/40 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold text-sky-300">Winter Watering Schedule</label>
+              <div class="flex items-center gap-1">
+                <span class="text-[11px] text-emerald-300/70">Every</span>
+                <input type="number" id="formWinterDays" min="1" max="90" value="9" aria-label="Winter watering interval in days" class="w-14 px-2 py-1 rounded bg-[#14261d] border border-emerald-700/50 text-xs text-center text-white"/>
+                <span class="text-[11px] text-emerald-300/70">days</span>
+              </div>
+            </div>
+            <textarea id="formWinterWatering" rows="2" placeholder="e.g. Every 8–12 days; let top half dry during winter dormancy..." class="w-full px-3 py-1.5 rounded-lg bg-[#112119] border border-emerald-800/50 text-xs text-white focus:outline-none"></textarea>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-emerald-200 mb-1">Care Notes &amp; Reference URL</label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input type="text" id="formCareNotes" placeholder="Special notes (e.g. protect below 10°C, do not repot in autumn)..." class="sm:col-span-2 px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-xs text-white focus:outline-none focus:border-emerald-500"/>
+            <input type="text" id="formWikiUrl" placeholder="https://en.wikipedia.org/wiki/..." class="px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-xs text-emerald-300 focus:outline-none focus:border-emerald-500"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-3.5 border-t border-emerald-900/60 bg-[#0b1611] flex items-center justify-between gap-3">
+        <button type="button" id="btnDeletePlant" onclick="deletePlantFromModal()" class="hidden px-3.5 py-2 rounded-xl bg-rose-950/70 hover:bg-rose-900 text-rose-200 border border-rose-800/60 text-xs font-semibold transition">
+          Delete Plant
+        </button>
+        <div class="flex items-center gap-2 ml-auto">
+          <button type="button" onclick="closePlantModal()" class="px-4 py-2 rounded-xl bg-[#162d22] hover:bg-[#1e3b2d] text-emerald-200 text-xs font-medium">Cancel</button>
+          <button type="button" onclick="savePlantFromModal()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold shadow-lg">Save Plant Profile</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 3: QUICK LOG EVENT MODAL ==================== -->
+  <div id="quickLogModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#0f1e17] border border-emerald-700/70 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
+      <div class="px-5 py-4 border-b border-emerald-900/60 flex items-center justify-between bg-[#0b1611]">
+        <h3 class="text-base font-bold text-white">Log Care Event or Free-Text Note</h3>
+        <button type="button" onclick="closeQuickLogModal()" aria-label="Close quick log modal" class="p-1 rounded-lg bg-[#162d22] text-emerald-200">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-5 space-y-3.5">
+        <div>
+          <label class="block text-xs font-medium text-emerald-200 mb-1">Select Plant</label>
+          <select id="quickLogPlantSelect" aria-label="Select Plant" class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white focus:outline-none"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-emerald-200 mb-1">Event Type</label>
+            <select id="quickLogTypeSelect" aria-label="Event Type" class="w-full px-3 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-xs text-white focus:outline-none">
+              <option value="Note / Diagnosis">Free Text / Note</option>
+              <option value="Watering">Watering</option>
+              <option value="Fertilizing">Fertilizing</option>
+              <option value="Soil / Repotting">Soil / Pot Change</option>
+              <option value="Pruning">Pruning</option>
+              <option value="Wiring / Styling">Wiring / Guy-Wire</option>
+              <option value="Soil / pH Treatment">pH / Flushing</option>
+              <option value="Propagation">Propagation</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-emerald-200 mb-1">Date</label>
+            <input type="date" id="quickLogDateInput" aria-label="Event Date" class="w-full px-3 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-xs text-white focus:outline-none"/>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-emerald-200 mb-1">Free-Text Event Details</label>
+          <textarea id="quickLogNoteInput" rows="3" placeholder="Describe what you did or observed (fertilizer dosage, soil mix ratio, pruning nodes, pH reading)..." class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white placeholder-emerald-300/40 focus:outline-none"></textarea>
+        </div>
+      </div>
+      <div class="px-5 py-3.5 border-t border-emerald-900/60 bg-[#0b1611] flex justify-end gap-2">
+        <button type="button" onclick="closeQuickLogModal()" class="px-4 py-2 rounded-xl bg-[#162d22] text-emerald-200 text-xs font-medium">Cancel</button>
+        <button type="button" onclick="saveQuickLogModal()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">Save Event</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 4: RESET CONFIRMATION MODAL ==================== -->
+  <div id="resetConfirmModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#0f1e17] border border-rose-800/70 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <h3 class="text-base font-bold text-white">Reset Collection to Default 19-Plant Roster?</h3>
+      <p class="text-xs text-emerald-100/80 leading-relaxed">
+        This will restore the preloaded 19 plants and their historical care logs. Any custom edits not exported to JSON will be replaced.
+      </p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeResetConfirmModal()" class="px-4 py-2 rounded-xl bg-[#162d22] text-emerald-200 text-xs font-medium">Cancel</button>
+        <button type="button" onclick="confirmResetCollection()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold">Restore Defaults</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 5: ADD PLANT BY PHOTO ==================== -->
+  <div id="photoIdentifyModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div class="bg-[#0f1e17] border border-teal-700/70 rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+      <div class="px-5 py-4 border-b border-emerald-900/60 flex items-center justify-between bg-[#0b1611]">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>Add Plant by Uploading a Picture</span>
+          </h2>
+          <p class="text-xs text-emerald-300/70">Snap or upload a photo—auto-identify with AI Vision (if configured) or pair with a name to auto-fill care.</p>
+        </div>
+        <button type="button" onclick="closePhotoIdentifyModal()" aria-label="Close photo upload modal" class="p-1.5 rounded-xl bg-[#162d22] hover:bg-rose-950 text-emerald-200">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto custom-scroll space-y-4 flex-1">
+        <!-- Upload / Camera Dropzone -->
+        <label id="photoDropZone" class="block rounded-2xl border-2 border-dashed border-teal-700/60 hover:border-teal-400 bg-[#0b1611] p-5 text-center cursor-pointer transition">
+          <input type="file" id="photoIdentifyFileInput" accept="image/*" onchange="handlePhotoIdentifyFile(event)" class="hidden"/>
+          <div id="photoIdentifyEmptyState" class="space-y-2 py-4">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-teal-950 border border-teal-700/60 flex items-center justify-center text-teal-300">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+            <p class="text-sm font-semibold text-white">Tap to Take a Photo or Choose an Image</p>
+            <p class="text-xs text-emerald-300/70">Works with iPhone Camera, Photo Library, or PC image files</p>
+          </div>
+          <div id="photoIdentifyPreviewBox" class="hidden space-y-2">
+            <img id="photoIdentifyPreviewImg" src="" alt="Uploaded plant preview" class="max-h-56 mx-auto rounded-xl object-contain border border-emerald-800/60"/>
+            <p class="text-xs text-teal-300">Tap to change photo</p>
+          </div>
+        </label>
+
+        <!-- Optional Plant Name / AI Identification Controls -->
+        <div class="p-4 rounded-2xl bg-[#0b1611] border border-emerald-900/60 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-xs font-semibold text-emerald-200">Identify Species &amp; Care Profile</span>
+            <span id="photoIdentifyStatus" class="text-[11px] text-emerald-300/80">Upload a photo to begin</span>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" id="photoIdentifyHintInput" placeholder="Optional name hint (e.g. Monstera, Ficus, Sarracenia)..." class="flex-1 px-3.5 py-2 rounded-xl bg-[#112119] border border-emerald-800/60 text-xs sm:text-sm text-white placeholder-emerald-300/40 focus:outline-none focus:border-teal-400"/>
+            <button type="button" id="btnIdentifyFromPhoto" onclick="identifyPlantFromUploadedPhoto()" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-semibold shrink-0 transition">
+              Identify &amp; Auto-Fill
+            </button>
+          </div>
+
+          <!-- Optional Gemini Vision API Key for Automatic Photo ID -->
+          <details class="text-xs text-emerald-200/80">
+            <summary class="cursor-pointer text-teal-300/90 hover:text-teal-200 font-medium">Optional: Enable Automatic AI Photo Identification (Gemini API Key)</summary>
+            <div class="mt-2 space-y-2 pt-2 border-t border-emerald-900/50">
+              <p class="text-[11px] text-emerald-200/70">Paste a Gemini API key (saved locally in your browser) to automatically identify any plant directly from its photo without typing a name.</p>
+              <div class="flex gap-2">
+                <input type="password" id="geminiVisionKeyInput" placeholder="AIza..." class="flex-1 px-3 py-1.5 rounded-lg bg-[#112119] border border-emerald-800/60 text-xs text-white focus:outline-none"/>
+                <button type="button" onclick="saveGeminiVisionKey()" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold">Save Key</button>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <div class="px-5 py-3.5 border-t border-emerald-900/60 bg-[#0b1611] flex items-center justify-between gap-2">
+        <button type="button" onclick="closePhotoIdentifyModal()" class="px-4 py-2 rounded-xl bg-[#162d22] text-emerald-200 text-xs font-medium">Cancel</button>
+        <button type="button" onclick="continuePhotoToPlantForm()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold shadow-lg">
+          Continue to Plant Care Form →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 6: ADD TIMED REMINDER (.ICS) ==================== -->
+  <div id="quickReminderModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#0f1e17] border border-amber-700/70 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
+      <div class="px-5 py-4 border-b border-emerald-900/60 flex items-center justify-between bg-[#0b1611]">
+        <h3 class="text-base font-bold text-white">Add Timed Reminder</h3>
+        <button type="button" onclick="closeQuickReminderModal()" aria-label="Close reminder modal" class="p-1 rounded-lg bg-[#162d22] text-emerald-200">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-5 space-y-3.5">
+        <div>
+          <label class="block text-xs font-medium text-emerald-200 mb-1">Plant / Tree</label>
+          <select id="reminderPlantSelect" aria-label="Select plant for reminder" class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white focus:outline-none"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-emerald-200 mb-1">Reminder Title</label>
+          <input type="text" id="reminderTitleInput" placeholder="e.g. Check bonsai wire bite, Prune dead wood, Upsize pot..." class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white focus:outline-none"/>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-emerald-200 mb-1">Target Date</label>
+          <input type="date" id="reminderDateInput" aria-label="Reminder date" class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white focus:outline-none"/>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-emerald-200 mb-1">Notes (Optional)</label>
+          <textarea id="reminderNoteInput" rows="2" placeholder="Details for your iPhone Calendar alert..." class="w-full px-3.5 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-xs text-white focus:outline-none"></textarea>
+        </div>
+      </div>
+      <div class="px-5 py-3.5 border-t border-emerald-900/60 bg-[#0b1611] flex justify-end gap-2">
+        <button type="button" onclick="closeQuickReminderModal()" class="px-4 py-2 rounded-xl bg-[#162d22] text-emerald-200 text-xs font-medium">Cancel</button>
+        <button type="button" onclick="saveQuickReminder(true)" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold">Save &amp; Add to iPhone Calendar (.ics)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 pointer-events-none flex flex-col gap-2"></div>
+
+  <script>
+    // =========================================================================
+    // 1. PRELOADED BOTANICAL COLLECTION & REAL HISTORICAL CARE LOGS (19 PLANTS)
+    // =========================================================================
+    const TODAY_STR = '2026-11-13';
+    const STORAGE_KEY = 'verdantlog_collection_v1';
+    const SEASON_KEY = 'verdantlog_season_v1';
+
+    const DEFAULT_PLANTS = [
+      {
+        id: 'delonix-regia',
+        name: 'Royal Poinciana Bonsai',
+        scientificName: 'Delonix regia',
+        category: 'Bonsai & Trees',
+        location: 'South Balcony (Indoors <10–12°C)',
+        waterType: 'Tap / Filtered',
+        soilMix: 'Fast-draining bonsai mix: 50% pumice/lava/akadama, 30% pine bark fines, 20% coarse perlite in shallow training pot.',
+        sunExposure: 'Full direct south sun (6+ hrs daily); move to brightest south indoor window when night temps drop below 10–12°C.',
+        summerWatering: 'Every 1–2 days when top 2 cm dries; drench thoroughly during rapid summer trunk thickening.',
+        summerIntervalDays: 2,
+        winterWatering: 'Every 7–10 days; let substrate dry substantially during winter dormancy to prevent root rot. Zero winter fertilizer.',
+        winterIntervalDays: 8,
+        careNotes: 'Seed-grown bonsai trained with cushioned rope guy-wires at 45° pitch. Postpone pot upsizing until late spring (May–June).',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Delonix_regia',
+        svgTheme: 'delonix',
+        imageUrl: '',
+        lastWatered: '2026-11-08',
+        logs: [
+          { id: 'log-dr-1', date: '2026-11-08', type: 'Watering', note: 'Light winter-mode watering; checked guy-wire tension on primary trunk bend.' },
+          { id: 'log-dr-2', date: '2026-09-21', type: 'Wiring / Styling', note: 'Removed plastic trunk wrap after spotting white hypertrophied lenticels; retained cushioned rope guy-wires. Holding off on second bend and postponing pot upsizing until May–June.' },
+          { id: 'log-dr-3', date: '2026-09-07', type: 'Wiring / Styling', note: 'Replaced initial coated steel wire with cushioned rope guy-wire at 45° pitch to bend young seedling safely.' },
+          { id: 'log-dr-4', date: '2026-03-15', type: 'Propagation', note: 'Mechanical scarification of mottled glossy Delonix regia seed and warm soak germination.' }
+        ]
+      },
+      {
+        id: 'olea-europaea',
+        name: 'Olive Tree Bonsai',
+        scientificName: 'Olea europaea',
+        category: 'Bonsai & Trees',
+        location: 'South Balcony',
+        waterType: 'Tap / Filtered',
+        soilMix: 'Gritty Mediterranean bonsai substrate: 60% inorganic (pumice, tuff, coarse perlite) + 40% sifted pine bark/compost.',
+        sunExposure: 'Full direct southern sun (6–8+ hrs daily year-round on balcony).',
+        summerWatering: 'Every 2–3 days once top 2–3 cm of gritty mix dries out.',
+        summerIntervalDays: 3,
+        winterWatering: 'Every 7–11 days; allow substrate to dry moderately between winter waterings.',
+        winterIntervalDays: 9,
+        careNotes: 'Seed-grown olive whip wired with 45° anodized aluminum wire for primary trunk movement and sacrifice growth thickening.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Olive',
+        svgTheme: 'olive',
+        imageUrl: '',
+        lastWatered: '2026-11-07',
+        logs: [
+          { id: 'log-oe-1', date: '2026-11-07', type: 'Watering', note: 'Watered thoroughly on south balcony; checked aluminum wire bite on thickening trunk.' },
+          { id: 'log-oe-2', date: '2026-04-12', type: 'Wiring / Styling', note: 'Applied 45° anodized aluminum structural wire to young seed-grown whip to set initial trunk curves.' },
+          { id: 'log-oe-3', date: '2026-02-21', type: 'Propagation', note: 'Initiated 5-phase seed-grown olive bonsai protocol: pit cleaning, mechanical scarification, and cold stratification.' }
+        ]
+      },
+      {
+        id: 'schefflera-actinophylla',
+        name: 'Queensland Umbrella Tree',
+        scientificName: 'Schefflera actinophylla',
+        category: 'Bonsai & Trees',
+        location: 'Bright Indoor / Covered Balcony',
+        waterType: 'Tap / Filtered',
+        soilMix: 'Well-draining tropical bonsai/aroid blend: 40% coco coir, 35% perlite, 25% orchid bark supporting exposed roots (neagari).',
+        sunExposure: 'Bright indirect light with gentle morning sun; shield exposed roots from scorching midday summer heat.',
+        summerWatering: 'Every 4–5 days when top 3–4 cm of substrate dries.',
+        summerIntervalDays: 4,
+        winterWatering: 'Every 8–12 days; let top half of pot dry before watering.',
+        winterIntervalDays: 10,
+        careNotes: 'Exposed-root (neagari) style octopus tree; responds vigorously to hard node pruning.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Heptapleurum_actinophyllum',
+        svgTheme: 'schefflera',
+        imageUrl: '',
+        lastWatered: '2026-11-06',
+        logs: [
+          { id: 'log-sa-1', date: '2026-11-06', type: 'Watering', note: 'Watered around exposed root base; compact canopy branching well.' },
+          { id: 'log-sa-2', date: '2026-02-07', type: 'Pruning', note: 'Hard-pruned main stem 1 inch above node to shorten height; propagated cut top section.' }
+        ]
+      },
+      {
+        id: 'beaucarnea-recurvata',
+        name: 'Ponytail Palm',
+        scientificName: 'Beaucarnea recurvata',
+        category: 'Bonsai & Trees',
+        location: 'South Balcony / Bright Indoor',
+        waterType: 'Tap / Filtered',
+        soilMix: 'Gritty caudiciform & succulent mix: 50% coarse perlite/pumice/sand, 50% coco coir/potting mix.',
+        sunExposure: 'Full direct sun to very bright indirect light.',
+        summerWatering: 'Every 7–10 days; soak deeply only after pot dries completely (caudex base stores water).',
+        summerIntervalDays: 8,
+        winterWatering: 'Every 18–24 days; keep bone-dry between light winter waterings.',
+        winterIntervalDays: 20,
+        careNotes: 'Swollen caudex stores water; never let water sit in crown or saucer.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Beaucarnea_recurvata',
+        svgTheme: 'ponytail',
+        imageUrl: '',
+        lastWatered: '2026-10-29',
+        logs: [
+          { id: 'log-br-1', date: '2026-10-29', type: 'Watering', note: 'Deep autumn flush; caudex firm, shifting to 3-week winter watering schedule.' }
+        ]
+      },
+      {
+        id: 'labisia-pumila',
+        name: "Turtle Back ('Labisia pumila')",
+        scientificName: 'Labisia pumila',
+        category: 'Terrarium & Rare',
+        location: '12L Peltier-Cooled Glass Terrarium',
+        waterType: 'Distilled Only',
+        soilMix: 'Airy rainforest floor mix: 50% Deshanit Professional Aroid Mix, 30% chop sphagnum moss, 20% extra perlite.',
+        sunExposure: 'Low to medium filtered LED or north/east indirect light; strictly zero direct sun. Keep 75–85%+ enclosure humidity.',
+        summerWatering: 'Every 4–6 days using distilled water only at the soil line; keep evenly damp but never soggy.',
+        summerIntervalDays: 5,
+        winterWatering: 'Every 6–8 days with distilled water inside temperature-stabilized terrarium; keep foliage dry.',
+        winterIntervalDays: 7,
+        careNotes: 'Housed in custom 12L glass micro-terrarium with Arduino Nano, MOSFET switch & Peltier TEC cooling lid. Never let water pool on leaves.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Labisia_pumila',
+        svgTheme: 'labisia',
+        imageUrl: '',
+        lastWatered: '2026-11-09',
+        logs: [
+          { id: 'log-lp-1', date: '2026-11-09', type: 'Watering', note: 'Root-zone watering with distilled water; foliage kept completely dry under cloche/terrarium.' },
+          { id: 'log-lp-2', date: '2026-10-02', type: 'Note / Diagnosis', note: 'Diagnosed leaf spotting from water droplets pooling + low ambient humidity; moved to high-humidity enclosure on strict distilled water.' },
+          { id: 'log-lp-3', date: '2026-05-14', type: 'Note / Diagnosis', note: 'Built 12L glass micro-terrarium with 3D-printed lid, aluminum heatsink, Peltier TEC module, and Arduino Nano controller.' }
+        ]
+      },
+      {
+        id: 'anthurium-clarinervium',
+        name: 'Velvet Cardboard Anthurium',
+        scientificName: 'Anthurium clarinervium',
+        category: 'Aroids & Tropicals',
+        location: 'Indoor (East / Filtered South)',
+        waterType: 'Distilled Only',
+        soilMix: 'Chunky epiphytic mix: Deshanit Professional Aroid Mix (coarse orchid bark, perlite, coco chunks, horticultural charcoal).',
+        sunExposure: 'Bright, filtered indirect light (east window or sheer-curtained south room).',
+        summerWatering: 'Every 5–7 days when top 40–50% of chunky mix dries; feed weak liquid fertilizer diluted in distilled water.',
+        summerIntervalDays: 6,
+        winterWatering: 'Every 8–11 days when chunky substrate is mostly dry; reduce fertilizer by half.',
+        winterIntervalDays: 9,
+        careNotes: 'Thick velamen-covered epiphytic roots love high aeration in Deshanit Aroid Mix and mineral-free distilled water.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Anthurium_clarinervium',
+        svgTheme: 'clarinervium',
+        imageUrl: '',
+        lastWatered: '2026-11-07',
+        logs: [
+          { id: 'log-ac-1', date: '2026-11-07', type: 'Watering', note: 'Flushed chunky aroid mix with distilled water.' },
+          { id: 'log-ac-2', date: '2026-10-23', type: 'Fertilizing', note: 'Applied diluted liquid fertilizer mixed in distilled water.' },
+          { id: 'log-ac-3', date: '2026-10-02', type: 'Soil / Repotting', note: 'Verified suitability of Deshanit Professional Aroid Mix for maximum root aeration.' }
+        ]
+      },
+      {
+        id: 'anthurium-andraeanum',
+        name: 'Flamingo Flower',
+        scientificName: 'Anthurium andraeanum',
+        category: 'Aroids & Tropicals',
+        location: 'Indoor (Bright Indirect)',
+        waterType: 'Distilled Only',
+        soilMix: 'Chunky epiphytic aroid blend: 60% Deshanit Professional Aroid Mix + 25% coco coir + 15% perlite.',
+        sunExposure: 'Medium to bright indirect light; protect from direct southern sun to prevent spathe & leaf scorch.',
+        summerWatering: 'Every 5–7 days when top 3–4 cm feels dry.',
+        summerIntervalDays: 6,
+        winterWatering: 'Every 8–10 days; keep lightly moist without cold wet feet.',
+        winterIntervalDays: 9,
+        careNotes: 'Blooms continuously with bright indirect light and low-salt irrigation.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Anthurium_andraeanum',
+        svgTheme: 'andraeanum',
+        imageUrl: '',
+        lastWatered: '2026-11-07',
+        logs: [
+          { id: 'log-aa-1', date: '2026-11-07', type: 'Watering', note: 'Watered with filtered/distilled water.' },
+          { id: 'log-aa-2', date: '2026-10-02', type: 'Note / Diagnosis', note: 'Evaluated indoor window light placement and chunky aroid soil ratio.' }
+        ]
+      },
+      {
+        id: 'alocasia-wentii',
+        name: 'Hardy Elephant Ear',
+        scientificName: 'Alocasia wentii',
+        category: 'Aroids & Tropicals',
+        location: 'Indoor (East / Filtered South)',
+        waterType: 'Tap / Filtered',
+        soilMix: 'Rich, airy aroid mix: 50% Deshanit Aroid Mix, 30% coco coir, 20% coarse perlite.',
+        sunExposure: 'Bright indirect light (set back from south window or direct east morning light).',
+        summerWatering: 'Every 4–6 days; keep lightly moist during active summer leaf push without waterlogging corm.',
+        summerIntervalDays: 5,
+        winterWatering: 'Every 8–12 days; let top half dry out as winter growth slows.',
+        winterIntervalDays: 10,
+        careNotes: 'Bronze-purple abaxial leaf undersides; watch for spider mites in dry air.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Alocasia_wentii',
+        svgTheme: 'alocasia',
+        imageUrl: '',
+        lastWatered: '2026-11-05',
+        logs: [
+          { id: 'log-aw-1', date: '2026-11-05', type: 'Watering', note: 'Light watering; new central spear developing.' },
+          { id: 'log-aw-2', date: '2026-10-02', type: 'Note / Diagnosis', note: 'Assessed torn leaf edge (mechanical damage) and optimized indoor window light.' }
+        ]
+      },
+      {
+        id: 'pilea-peperomioides',
+        name: 'Chinese Money Plant',
+        scientificName: 'Pilea peperomioides',
+        category: 'Aroids & Tropicals',
+        location: 'Indoor (Bright Filtered)',
+        waterType: 'Tap / Filtered',
+        soilMix: 'Fast-draining blend: 50% coco coir / potting soil, 35% perlite, 15% fine orchid bark.',
+        sunExposure: 'Bright indirect light; rotate pot 90° weekly to keep symmetrical dome shape.',
+        summerWatering: 'Every 5–7 days when top 70% of pot dries and petioles soften slightly.',
+        summerIntervalDays: 6,
+        winterWatering: 'Every 9–12 days; allow soil to dry almost completely before watering.',
+        winterIntervalDays: 11,
+        careNotes: 'Responds well to diluted balanced fertilizer in growing season.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Pilea_peperomioides',
+        svgTheme: 'pilea',
+        imageUrl: '',
+        lastWatered: '2026-11-04',
+        logs: [
+          { id: 'log-pp-1', date: '2026-11-04', type: 'Watering', note: 'Watered and rotated pot 90 degrees toward window.' },
+          { id: 'log-pp-2', date: '2026-10-23', type: 'Fertilizing', note: 'Applied diluted liquid fertilizer protocol.' },
+          { id: 'log-pp-3', date: '2026-10-02', type: 'Soil / Repotting', note: 'Checked soil drainage ratio alongside Anthurium and Asparagus fern.' }
+        ]
+      },
+      {
+        id: 'asparagus-setaceus',
+        name: 'Asparagus Fern',
+        scientificName: 'Asparagus setaceus',
+        category: 'Aroids & Tropicals',
+        location: 'Indoor (North / East Light)',
+        waterType: 'Tap / Filtered',
+        soilMix: 'Moisture-retentive airy mix: 50% coco coir, 30% Deshanit Aroid Mix, 20% perlite.',
+        sunExposure: 'Medium to bright indirect light; strictly avoid direct hot sun which yellows cladodes.',
+        summerWatering: 'Every 4–5 days; keep fibrous root ball evenly damp.',
+        summerIntervalDays: 4,
+        winterWatering: 'Every 7–9 days when top 3 cm feels dry.',
+        winterIntervalDays: 8,
+        careNotes: 'Not a true fern; stores moisture in tuberous roots. Handle root ball gently when repotting.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Asparagus_setaceus',
+        svgTheme: 'asparagus',
+        imageUrl: '',
+        lastWatered: '2026-11-08',
+        logs: [
+          { id: 'log-as-1', date: '2026-11-08', type: 'Watering', note: 'Watered lightly; feathery plumes deep green.' },
+          { id: 'log-as-2', date: '2026-10-02', type: 'Soil / Repotting', note: 'Reviewed root-ball loosening and repotted into coco-perlite-aroid blend.' }
+        ]
+      },
+      {
+        id: 'hoya-callistophylla',
+        name: 'Veined Wax Plant',
+        scientificName: 'Hoya callistophylla',
+        category: 'Hoyas & Epiphytes',
+        location: 'Indoor (Bright Filtered)',
+        waterType: 'Distilled Only',
+        soilMix: 'Ultra-airy epiphytic Hoya mix: 45% coarse perlite, 35% Deshanit Aroid Mix (bark/coco chunks), 20% coco coir.',
+        sunExposure: 'Bright indirect light; shield from harsh direct south sun.',
+        summerWatering: 'Every 6–8 days; soak thoroughly only when substrate is nearly dry.',
+        summerIntervalDays: 7,
+        winterWatering: 'Every 11–14 days; allow chunky mix to dry completely between waterings.',
+        winterIntervalDays: 12,
+        careNotes: 'Repotted Sept 2026 into coco-perlite + aroid mix; focuses on root filling before vining.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Hoya',
+        svgTheme: 'hoyacalli',
+        imageUrl: '',
+        lastWatered: '2026-11-03',
+        logs: [
+          { id: 'log-hc-1', date: '2026-11-03', type: 'Watering', note: 'Deep watering with diluted nutrient solution in distilled water.' },
+          { id: 'log-hc-2', date: '2026-09-01', type: 'Soil / Repotting', note: 'Repotted into fresh coco-perlite and chunky aroid mix.' }
+        ]
+      },
+      {
+        id: 'hoya-carnosa',
+        name: 'Porcelain Flower (Blooming)',
+        scientificName: 'Hoya carnosa',
+        category: 'Hoyas & Epiphytes',
+        location: 'Indoor (Filtered South Window)',
+        waterType: 'Distilled Only',
+        soilMix: 'Airy epiphytic mix: 40% coco coir, 40% coarse perlite, 20% orchid bark (keep root-bound to encourage blooming).',
+        sunExposure: 'Bright indirect light with soft morning sun; moved back from harsh autumn southern sun to stop leaf yellowing.',
+        summerWatering: 'Every 6–8 days when pot feels light; weak bloom fertilizer diluted in distilled water.',
+        summerIntervalDays: 7,
+        winterWatering: 'Every 10–14 days when dry. Never remove woody peduncles (spurs re-bloom repeatedly).',
+        winterIntervalDays: 12,
+        careNotes: '2-year unrepotted mature specimen flowering continuously; skipped autumn repotting to preserve root vigor.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Hoya_carnosa',
+        svgTheme: 'hoyacarnosa',
+        imageUrl: '',
+        lastWatered: '2026-11-03',
+        logs: [
+          { id: 'log-hca-1', date: '2026-11-03', type: 'Watering', note: 'Watered with distilled water; floral peduncles active.' },
+          { id: 'log-hca-2', date: '2026-10-23', type: 'Pruning', note: 'Executed 15–20% light canopy pruning; rejected autumn root repotting on 2-year blooming plant and filtered direct south sun to halt leaf yellowing.' }
+        ]
+      },
+      {
+        id: 'dionaea-muscipula',
+        name: 'Venus Flytrap',
+        scientificName: 'Dionaea muscipula',
+        category: 'Carnivorous',
+        location: 'South Balcony Bog Tray',
+        waterType: 'Distilled Only',
+        soilMix: 'Zero-nutrient carnivorous bog mix: 50% unfertilized blonde sphagnum peat moss + 50% rinsed perlite/quartz sand. Never use regular soil or terracotta.',
+        sunExposure: 'Full direct sun (6+ hrs daily on south balcony) for deep red trap interiors.',
+        summerWatering: 'Constant tray method: keep pot sitting in 1–2 cm of distilled or reverse-osmosis water at all times.',
+        summerIntervalDays: 2,
+        winterWatering: 'Keep substrate damp (not submerged in deep tray water) using distilled water during cool winter dormancy (Nov–Feb).',
+        winterIntervalDays: 5,
+        careNotes: 'Strictly zero mineral fertilizer or tap water (TDS < 50 ppm). Requires cool winter dormancy.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Venus_flytrap',
+        svgTheme: 'flytrap',
+        imageUrl: '',
+        lastWatered: '2026-11-10',
+        logs: [
+          { id: 'log-dm-1', date: '2026-11-10', type: 'Watering', note: 'Topped bog tray with shallow distilled water for cool-season dormancy transition.' },
+          { id: 'log-dm-2', date: '2026-10-23', type: 'Note / Diagnosis', note: 'Entering autumn dormancy prep; reducing standing tray water depth.' }
+        ]
+      },
+      {
+        id: 'drosera-capensis',
+        name: 'Cape Sundew',
+        scientificName: 'Drosera capensis',
+        category: 'Carnivorous',
+        location: 'South Window / Balcony Tray',
+        waterType: 'Distilled Only',
+        soilMix: 'Nutrient-free carnivorous mix: 50% pure sphagnum peat or long-fiber sphagnum moss + 50% rinsed perlite.',
+        sunExposure: 'Full sun to very bright direct light (essential for sticky mucilage dew droplets).',
+        summerWatering: 'Constant tray method: maintain 1–2 cm of distilled water in saucer continuously.',
+        summerIntervalDays: 2,
+        winterWatering: 'Refill shallow tray with distilled water every 4–5 days (allow tray to empty briefly for 1 day in winter).',
+        winterIntervalDays: 4,
+        careNotes: 'If tentacles lose dew droplets, increase direct sunlight and verify distilled water tray level.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Drosera_capensis',
+        svgTheme: 'sundew',
+        imageUrl: '',
+        lastWatered: '2026-11-11',
+        logs: [
+          { id: 'log-dc-1', date: '2026-11-11', type: 'Watering', note: 'Refilled saucer with 1 cm distilled water; abundant sticky dew droplets on leaves.' }
+        ]
+      },
+      {
+        id: 'nepenthes-alata',
+        name: 'Tropical Pitcher Plant',
+        scientificName: 'Nepenthes',
+        category: 'Carnivorous',
+        location: 'Bright Humid Indoor',
+        waterType: 'Distilled Only',
+        soilMix: 'Loose epiphytic carnivorous mix: 50% long-fiber sphagnum moss (LFS), 30% perlite, 20% fine orchid bark. Zero soil fertilizer.',
+        sunExposure: 'Bright indirect light (east/filtered south window) with 60%+ humidity to trigger pitcher inflation.',
+        summerWatering: 'Top-water every 3–4 days with distilled water so sphagnum stays spongy-moist (never sit in deep tray water).',
+        summerIntervalDays: 3,
+        winterWatering: 'Top-water every 5–7 days with distilled water; keep slightly less wet in winter.',
+        winterIntervalDays: 6,
+        careNotes: 'Keep pitchers 1/4 filled with distilled water if dry during transport.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Nepenthes',
+        svgTheme: 'nepenthes',
+        imageUrl: '',
+        lastWatered: '2026-11-09',
+        logs: [
+          { id: 'log-na-1', date: '2026-11-09', type: 'Watering', note: 'Top-watered long-fiber sphagnum with distilled water; drained excess from saucer.' }
+        ]
+      },
+      {
+        id: 'vaccinium-corymbosum',
+        name: 'Potted Blueberry Bush',
+        scientificName: 'Vaccinium corymbosum',
+        category: 'Balcony Fruit & Trees',
+        location: 'South Balcony',
+        waterType: 'pH 5.2 Adjusted',
+        soilMix: 'Acidic ericaceous mix (target pH 4.5–5.5): 50% acidic peat moss, 30% pine bark fines, 20% perlite + elemental sulfur top-dressing.',
+        sunExposure: 'Full direct south sun (6–8 hrs daily).',
+        summerWatering: 'Every 1–2 days in summer heat using pH 5.2 vinegar-adjusted water (never raw pH 7.47 tap water).',
+        summerIntervalDays: 2,
+        winterWatering: 'Every 4–6 days with pH 5.2 adjusted water. Perform structural pruning of dead wood in late winter (Jan–Feb).',
+        winterIntervalDays: 5,
+        careNotes: 'Recovered from alkaline pH 7.47 tap-water lockup via pot flush, elemental sulfur, and hand-watering at pH 5.2. Prune in Jan–Feb.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Blueberry',
+        svgTheme: 'blueberry',
+        imageUrl: '',
+        lastWatered: '2026-11-10',
+        logs: [
+          { id: 'log-vc-1', date: '2026-11-10', type: 'Watering', note: 'Hand-watered with pH 5.2 vinegar-adjusted water; foliage color recovering steadily.' },
+          { id: 'log-vc-2', date: '2026-10-03', type: 'Soil / pH Treatment', note: 'Diagnosed alkaline lock-up from pH 7.47 tap water. Flushed pot, top-dressed elemental sulfur, plucked stress berries, disconnected auto-drip, and started 4–6 week pH 5.2 hand-watering protocol. Pruning set for Jan–Feb.' }
+        ]
+      },
+      {
+        id: 'rubus-fruticosus',
+        name: 'Potted Blackberry',
+        scientificName: 'Rubus fruticosus',
+        category: 'Balcony Fruit & Trees',
+        location: 'South Balcony',
+        waterType: 'Tap / Filtered',
+        soilMix: 'Rich slightly acidic container mix (pH 5.5–6.5): 60% compost/potting soil, 25% perlite, 15% coco coir.',
+        sunExposure: 'Full direct south sun (6–8 hrs daily).',
+        summerWatering: 'Every 1–2 days during Tel Aviv summer heat; keep root zone consistently moist.',
+        summerIntervalDays: 2,
+        winterWatering: 'Every 5–7 days when top 4 cm dries; prune spent floricanes in winter.',
+        winterIntervalDays: 6,
+        careNotes: 'Vigorous cane fruit; tie primocanes to balcony trellis.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Blackberry',
+        svgTheme: 'blackberry',
+        imageUrl: '',
+        lastWatered: '2026-11-09',
+        logs: [
+          { id: 'log-rf-1', date: '2026-11-09', type: 'Watering', note: 'Watered container on south balcony; canes healthy entering cooler weather.' }
+        ]
+      },
+      {
+        id: 'plumeria-rubra',
+        name: 'Frangipani',
+        scientificName: 'Plumeria rubra',
+        category: 'Balcony Fruit & Trees',
+        location: 'South Balcony',
+        waterType: 'Tap / Filtered',
+        soilMix: 'Fast-draining gritty mix: 60–70% coarse perlite/pumice + 30–40% coco coir/potting mix (never 100% pure coco coir on cuttings).',
+        sunExposure: 'Full hot direct south sun (6+ hrs daily).',
+        summerWatering: 'Every 3–5 days in summer; drench thoroughly then let dry out between waterings.',
+        summerIntervalDays: 4,
+        winterWatering: 'Every 18–25 days (or withhold water almost completely once leaves drop in winter dormancy to prevent stem rot).',
+        winterIntervalDays: 21,
+        careNotes: 'For 30–45 cm cuttings: callus 1–2 weeks dry, root in May–July in 75% perlite / 25% coco coir.',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Plumeria_rubra',
+        svgTheme: 'plumeria',
+        imageUrl: '',
+        lastWatered: '2026-10-28',
+        logs: [
+          { id: 'log-pr-1', date: '2026-10-28', type: 'Watering', note: 'Minimal late-autumn watering as nights cool and leaves prepare for winter dormancy.' },
+          { id: 'log-pr-2', date: '2026-09-11', type: 'Propagation', note: 'Established cutting protocol: 30–45 cm semi-hardwood branch, 1–2 week dry callusing, and 70–80% perlite / 20–30% coco coir mix (avoiding 100% Johnny Green coco brick to prevent rot).' }
+        ]
+      },
+      {
+        id: 'bauhinia-variegata',
+        name: 'Orchid Tree',
+        scientificName: 'Bauhinia variegata',
+        category: 'Balcony Fruit & Trees',
+        location: 'South Balcony',
+        waterType: 'Tap / Filtered',
+        soilMix: 'Well-draining loamy container blend: 50% quality potting soil, 30% coarse perlite/sand, 20% coco coir.',
+        sunExposure: 'Full sun to bright partial sun on south balcony.',
+        summerWatering: 'Every 2–4 days during active warm-season growth.',
+        summerIntervalDays: 3,
+        winterWatering: 'Every 7–10 days; reduce watering sharply during winter cool spell / partial leaf drop.',
+        winterIntervalDays: 9,
+        careNotes: 'Bilobed camel-foot leaves; seed pods mature dark brown & woody in late June–August (use paper bag to catch dehiscent seeds).',
+        wikiUrl: 'https://en.wikipedia.org/wiki/Bauhinia_variegata',
+        svgTheme: 'bauhinia',
+        imageUrl: '',
+        lastWatered: '2026-11-06',
+        logs: [
+          { id: 'log-bv-1', date: '2026-11-06', type: 'Watering', note: 'Watered container; slowing irrigation for winter mode.' },
+          { id: 'log-bv-2', date: '2026-04-08', type: 'Propagation', note: 'Established seed scarification + 24h warm soak protocol (1 cm depth) and late June–August woody pod harvest window.' }
+        ]
+      }
+    ];
+
+    // =========================================================================
+    // 2. APPLICATION STATE & STORAGE HELPERS
+    // =========================================================================
+    let plantsState = [];
+    let currentSeason = 'winter'; // Default for November
+    let selectedCategory = 'All';
+    let currentDetailPlantId = null;
+    let lastWebCandidates = [];
+
+    async function syncFromPythonServer() {
+      if (window.location.protocol.startsWith('http')) {
+        try {
+          const res = await fetch('/api/state');
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data.plants) && data.plants.length > 0) {
+              plantsState = data.plants;
+              ensureDefaultReminders();
+              currentSeason = data.seasonMode || currentSeason;
+              const badge = document.getElementById('connectionBadge');
+              if (badge) badge.textContent = 'Python SQLite Connected (plants.db)';
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(plantsState));
+                localStorage.setItem(SEASON_KEY, currentSeason);
+              } catch (e) {}
+              updateSeasonHeaderUI();
+              renderRoster();
+              populatePlantSelects();
+              renderGlobalLogs();
+            }
+          }
+        } catch (err) {
+          // Running standalone in browser
+        }
+      }
+    }
+
+    function loadState() {
+      setTimeout(syncFromPythonServer, 50);
+      try {
+        const savedSeason = localStorage.getItem(SEASON_KEY);
+        if (savedSeason === 'summer' || savedSeason === 'winter') {
+          currentSeason = savedSeason;
+        }
+        const savedPlants = localStorage.getItem(STORAGE_KEY);
+        if (savedPlants) {
+          const parsed = JSON.parse(savedPlants);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            plantsState = parsed;
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('localStorage access fallback:', e);
+      }
+      plantsState = JSON.parse(JSON.stringify(DEFAULT_PLANTS));
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(plantsState));
+        localStorage.setItem(SEASON_KEY, currentSeason);
+      } catch (e) {
+        console.warn('localStorage write fallback:', e);
+      }
+      if (window.location.protocol.startsWith('http')) {
+        fetch('/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ seasonMode: currentSeason, plants: plantsState })
+        }).catch(() => {});
+      }
+    }
+
+    function showToast(message, tone = 'emerald') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      const colors = tone === 'amber'
+        ? 'bg-amber-950/95 border-amber-600/70 text-amber-100'
+        : tone === 'rose'
+        ? 'bg-rose-950/95 border-rose-600/70 text-rose-100'
+        : 'bg-emerald-950/95 border-emerald-500/70 text-emerald-100';
+      toast.className = `pointer-events-auto px-4 py-2.5 rounded-xl border shadow-xl text-xs font-medium flex items-center gap-2 transition-all ${colors}`;
+      toast.innerHTML = `<span class="w-2 h-2 rounded-full bg-current"></span><span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 250);
+      }, 3200);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // =========================================================================
+    // 3. CUSTOM BOTANICAL SVG ARTWORK GENERATOR (FOR ALL SPECIES THEMES)
+    // =========================================================================
+    function getBotanicalSvg(theme, name) {
+      const title = escapeHtml(name || 'Plant');
+      const artMap = {
+        delonix: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <defs>
+              <linearGradient id="bg-del" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0d261b"/><stop offset="100%" stop-color="#193827"/></linearGradient>
+            </defs>
+            <rect width="320" height="200" fill="url(#bg-del)"/>
+            <ellipse cx="160" cy="170" rx="68" ry="12" fill="#08150f"/>
+            <!-- Shallow Bonsai Pot -->
+            <path d="M102 150 L218 150 L206 172 L114 172 Z" fill="#8c4a32" stroke="#b5694d" stroke-width="2"/>
+            <rect x="97" y="145" width="126" height="6" rx="2" fill="#a45a3f"/>
+            <!-- Curved Bonsai Trunk + Guy Wire -->
+            <path d="M155 146 Q130 115 162 88 Q182 70 168 52" fill="none" stroke="#8b6b4a" stroke-width="10" stroke-linecap="round"/>
+            <line x1="147" y1="98" x2="115" y2="146" stroke="#fbbf24" stroke-width="1.8" stroke-dasharray="3,2"/>
+            <circle cx="147" cy="98" r="3.5" fill="#fbbf24"/>
+            <!-- Bipinnate Fern-like Delonix Fronds -->
+            <g fill="#4ade80" opacity="0.92">
+              <ellipse cx="122" cy="65" rx="28" ry="9" transform="rotate(-18 122 65)"/>
+              <ellipse cx="195" cy="62" rx="30" ry="9" transform="rotate(15 195 62)"/>
+              <ellipse cx="160" cy="44" rx="32" ry="10"/>
+              <ellipse cx="135" cy="48" rx="22" ry="7" transform="rotate(-25 135 48)"/>
+              <ellipse cx="188" cy="46" rx="22" ry="7" transform="rotate(24 188 46)"/>
+            </g>
+            <text x="14" y="24" fill="#86efac" font-size="10" font-family="monospace">BONSAI • GUY-WIRE 45°</text>
+          </svg>`,
+        olive: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#10231c"/>
+            <path d="M108 150 L212 150 L200 174 L120 174 Z" fill="#64748b" stroke="#94a3b8" stroke-width="2"/>
+            <path d="M160 150 C145 122 178 96 156 64" fill="none" stroke="#78716c" stroke-width="11" stroke-linecap="round"/>
+            <path d="M158 142 C148 125 172 104 156 72" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="4,4"/>
+            <g fill="#a3e635" stroke="#bef264" stroke-width="0.8">
+              <ellipse cx="135" cy="70" rx="16" ry="5" transform="rotate(-30 135 70)"/>
+              <ellipse cx="182" cy="72" rx="16" ry="5" transform="rotate(28 182 72)"/>
+              <ellipse cx="158" cy="50" rx="18" ry="5.5" transform="rotate(-10 158 50)"/>
+              <ellipse cx="142" cy="56" rx="15" ry="4.5" transform="rotate(-40 142 56)"/>
+              <ellipse cx="175" cy="56" rx="15" ry="4.5" transform="rotate(35 175 56)"/>
+            </g>
+            <text x="14" y="24" fill="#bef264" font-size="10" font-family="monospace">OLEA EUROPAEA • AL-WIRE</text>
+          </svg>`,
+        schefflera: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#0d2219"/>
+            <path d="M115 152 L205 152 L195 176 L125 176 Z" fill="#7c2d12" stroke="#c2410c" stroke-width="1.5"/>
+            <!-- Exposed Neagari Roots -->
+            <path d="M145 152 Q152 128 158 112 M160 152 Q160 130 160 112 M175 152 Q168 128 162 112" fill="none" stroke="#a16207" stroke-width="4" stroke-linecap="round"/>
+            <path d="M160 114 L160 72" stroke="#854d0e" stroke-width="8" stroke-linecap="round"/>
+            <!-- Umbrella Leaflets -->
+            <g fill="#22c55e">
+              <ellipse cx="160" cy="46" rx="8" ry="20"/>
+              <ellipse cx="138" cy="56" rx="8" ry="19" transform="rotate(-48 138 56)"/>
+              <ellipse cx="182" cy="56" rx="8" ry="19" transform="rotate(48 182 56)"/>
+              <ellipse cx="132" cy="76" rx="7" ry="17" transform="rotate(-82 132 76)"/>
+              <ellipse cx="188" cy="76" rx="7" ry="17" transform="rotate(82 188 76)"/>
+            </g>
+            <text x="14" y="24" fill="#4ade80" font-size="10" font-family="monospace">EXPOSED ROOTS • NEAGARI</text>
+          </svg>`,
+        ponytail: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#112218"/>
+            <path d="M118 148 L202 148 L192 175 L128 175 Z" fill="#9a3412"/>
+            <!-- Swollen Caudex -->
+            <path d="M138 148 Q132 108 152 88 L168 88 Q188 108 182 148 Z" fill="#785c42" stroke="#a38668" stroke-width="1.5"/>
+            <!-- Cascading Fronds -->
+            <path d="M160 88 Q120 45 92 115 M160 88 Q135 38 112 128 M160 88 Q185 38 208 128 M160 88 Q200 45 228 115 M160 88 Q160 35 160 75" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round"/>
+            <text x="14" y="24" fill="#86efac" font-size="10" font-family="monospace">CAUDICIFORM • BEAUCARNEA</text>
+          </svg>`,
+        labisia: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#091a16"/>
+            <!-- Terrarium Glass Enclosure Outline -->
+            <rect x="85" y="22" width="150" height="156" rx="14" fill="#0d2922" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.85"/>
+            <!-- Quilted Turtle-Back Leaves -->
+            <g transform="translate(160, 112)">
+              <ellipse cx="-26" cy="0" rx="28" ry="16" transform="rotate(-18 -26 0)" fill="#14532d" stroke="#4ade80" stroke-width="1.5"/>
+              <ellipse cx="26" cy="0" rx="28" ry="16" transform="rotate(18 26 0)" fill="#14532d" stroke="#4ade80" stroke-width="1.5"/>
+              <ellipse cx="0" cy="-22" rx="24" ry="15" fill="#166534" stroke="#86efac" stroke-width="1.5"/>
+              <path d="M-45 0 L-8 0 M8 0 L45 0 M0 -36 L0 -8" stroke="#86efac" stroke-width="1" opacity="0.7"/>
+            </g>
+            <text x="14" y="24" fill="#38bdf8" font-size="10" font-family="monospace">12L PELTIER TERRARIUM • DISTILLED</text>
+          </svg>`,
+        clarinervium: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#0b1d15"/>
+            <!-- Velvet Heart Leaf with Silver Veins -->
+            <path d="M160 158 C112 128 96 76 124 52 C142 36 160 54 160 66 C160 54 178 36 196 52 C224 76 208 128 160 158 Z" fill="#064e3b" stroke="#a7f3d0" stroke-width="2"/>
+            <path d="M160 66 L160 152 M160 82 Q135 75 118 90 M160 82 Q185 75 202 90 M160 105 Q138 102 125 118 M160 105 Q182 102 195 118" fill="none" stroke="#d1fae5" stroke-width="2.2" stroke-linecap="round"/>
+            <text x="14" y="24" fill="#a7f3d0" font-size="10" font-family="monospace">AROID MIX • VELVET LEAF</text>
+          </svg>`,
+        andraeanum: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#121f18"/>
+            <ellipse cx="130" cy="122" rx="28" ry="18" transform="rotate(-25 130 122)" fill="#15803d"/>
+            <ellipse cx="192" cy="124" rx="28" ry="18" transform="rotate(25 192 124)" fill="#166534"/>
+            <!-- Red Spathe & Yellow Spadix -->
+            <path d="M160 112 C130 92 126 56 148 42 C160 35 160 48 160 52 C160 48 160 35 172 42 C194 56 190 92 160 112 Z" fill="#dc2626" stroke="#f87171" stroke-width="1.5"/>
+            <line x1="160" y1="82" x2="174" y2="52" stroke="#fde047" stroke-width="5" stroke-linecap="round"/>
+            <text x="14" y="24" fill="#fca5a5" font-size="10" font-family="monospace">ANTHURIUM • SPATHE BLOOM</text>
+          </svg>`,
+        alocasia: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#101e19"/>
+            <!-- Arrowhead Shield Leaves -->
+            <path d="M160 155 L118 65 L148 82 L160 42 L172 82 L202 65 Z" fill="#15803d" stroke="#86efac" stroke-width="1.8"/>
+            <line x1="160" y1="46" x2="160" y2="152" stroke="#bbf7d0" stroke-width="2"/>
+            <text x="14" y="24" fill="#86efac" font-size="10" font-family="monospace">ALOCASIA WENTII • SHIELD</text>
+          </svg>`,
+        pilea: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#0d2118"/>
+            <g stroke="#86efac" stroke-width="1.5" fill="#22c55e">
+              <circle cx="160" cy="65" r="20"/><circle cx="122" cy="86" r="18"/><circle cx="198" cy="86" r="18"/>
+              <circle cx="138" cy="118" r="19"/><circle cx="184" cy="118" r="19"/>
+            </g>
+            <g fill="#bbf7d0">
+              <circle cx="160" cy="65" r="2.5"/><circle cx="122" cy="86" r="2.5"/><circle cx="198" cy="86" r="2.5"/>
+              <circle cx="138" cy="118" r="2.5"/><circle cx="184" cy="118" r="2.5"/>
+            </g>
+            <text x="14" y="24" fill="#86efac" font-size="10" font-family="monospace">PILEA • PELTATE FOLIAGE</text>
+          </svg>`,
+        asparagus: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#0b1f17"/>
+            <g fill="none" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round">
+              <path d="M160 165 Q130 110 95 75"/><path d="M160 165 Q160 95 160 40"/><path d="M160 165 Q190 110 225 75"/>
+              <path d="M110 90 L135 82 M102 78 L128 70 M145 75 L175 75 M148 58 L172 58 M185 82 L210 90 M192 70 L218 78"/>
+            </g>
+            <text x="14" y="24" fill="#6ee7b7" font-size="10" font-family="monospace">PLUME CLADODES • INDIRECT</text>
+          </svg>`,
+        hoyacalli: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#0e2219"/>
+            <ellipse cx="160" cy="102" rx="64" ry="28" fill="#bef264" stroke="#14532d" stroke-width="3"/>
+            <path d="M98 102 L222 102 M130 102 L115 80 M155 102 L145 76 M180 102 L195 78 M130 102 L118 124 M160 102 L152 126 M185 102 L198 122" stroke="#14532d" stroke-width="2.5"/>
+            <text x="14" y="24" fill="#bef264" font-size="10" font-family="monospace">HOYA CALLISTOPHYLLA • VEINED</text>
+          </svg>`,
+        hoyacarnosa: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#131e1c"/>
+            <path d="M80 130 Q150 70 240 120" fill="none" stroke="#15803d" stroke-width="4"/>
+            <ellipse cx="115" cy="105" rx="22" ry="12" transform="rotate(-20 115 105)" fill="#22c55e"/>
+            <ellipse cx="205" cy="105" rx="22" ry="12" transform="rotate(20 205 105)" fill="#22c55e"/>
+            <!-- Porcelain Star Flower Umbel -->
+            <g fill="#f9a8d4" stroke="#db2777" stroke-width="1.2">
+              <circle cx="160" cy="82" r="9"/><circle cx="144" cy="90" r="8"/><circle cx="176" cy="90" r="8"/>
+              <circle cx="150" cy="104" r="8"/><circle cx="170" cy="104" r="8"/>
+            </g>
+            <text x="14" y="24" fill="#f9a8d4" font-size="10" font-family="monospace">HOYA CARNOSA • PEDUNCLE BLOOM</text>
+          </svg>`,
+        flytrap: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#0c1e1b"/>
+            <!-- Distilled Bog Water Tray -->
+            <rect x="85" y="158" width="150" height="16" rx="4" fill="#0284c7" opacity="0.65"/>
+            <!-- Jaw Traps -->
+            <g transform="translate(160, 110)">
+              <path d="M-45 -10 C-65 -40 -15 -55 0 -20 Z" fill="#22c55e" stroke="#f43f5e" stroke-width="2"/>
+              <path d="M45 -10 C65 -40 15 -55 0 -20 Z" fill="#22c55e" stroke="#f43f5e" stroke-width="2"/>
+              <ellipse cx="-24" cy="-26" rx="16" ry="7" transform="rotate(-25 -24 -26)" fill="#e11d48"/>
+              <ellipse cx="24" cy="-26" rx="16" ry="7" transform="rotate(25 24 -26)" fill="#e11d48"/>
+            </g>
+            <text x="14" y="24" fill="#38bdf8" font-size="10" font-family="monospace">BOG TRAY • DISTILLED ONLY</text>
+          </svg>`,
+        sundew: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#0f1d1b"/>
+            <rect x="85" y="158" width="150" height="14" rx="4" fill="#0284c7" opacity="0.6"/>
+            <path d="M160 155 Q130 95 105 68 M160 155 Q160 85 160 52 M160 155 Q190 95 215 68" fill="none" stroke="#4ade80" stroke-width="5" stroke-linecap="round"/>
+            <g fill="#fb7185">
+              <circle cx="105" cy="68" r="4"/><circle cx="115" cy="78" r="3.5"/><circle cx="160" cy="52" r="4.5"/>
+              <circle cx="160" cy="68" r="3.5"/><circle cx="215" cy="68" r="4"/><circle cx="205" cy="78" r="3.5"/>
+            </g>
+            <text x="14" y="24" fill="#fb7185" font-size="10" font-family="monospace">DROSERA CAPENSIS • MUCILAGE</text>
+          </svg>`,
+        nepenthes: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#0d211b"/>
+            <path d="M90 60 Q145 55 155 95" fill="none" stroke="#4ade80" stroke-width="3"/>
+            <!-- Hanging Pitcher -->
+            <path d="M142 82 L174 82 Q182 135 158 148 Q134 135 142 82 Z" fill="#b91c1c" stroke="#fca5a5" stroke-width="1.8"/>
+            <ellipse cx="158" cy="82" rx="18" ry="5" fill="#fde047"/>
+            <ellipse cx="158" cy="68" rx="16" ry="5" transform="rotate(-15 158 68)" fill="#ef4444"/>
+            <text x="14" y="24" fill="#fca5a5" font-size="10" font-family="monospace">NEPENTHES • SPHAGNUM MOSS</text>
+          </svg>`,
+        blueberry: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#0f1d24"/>
+            <path d="M115 145 L205 145 L195 176 L125 176 Z" fill="#7c2d12"/>
+            <g fill="#22c55e">
+              <ellipse cx="135" cy="88" rx="22" ry="11" transform="rotate(-20 135 88)"/>
+              <ellipse cx="185" cy="88" rx="22" ry="11" transform="rotate(20 185 88)"/>
+              <ellipse cx="160" cy="68" rx="24" ry="12"/>
+            </g>
+            <!-- Blueberries -->
+            <g fill="#3b82f6" stroke="#93c5fd" stroke-width="1.2">
+              <circle cx="148" cy="95" r="7"/><circle cx="164" cy="100" r="7.5"/><circle cx="174" cy="88" r="6.5"/>
+            </g>
+            <text x="14" y="24" fill="#60a5fa" font-size="10" font-family="monospace">pH 5.2 ACIDIC • SULFUR</text>
+          </svg>`,
+        blackberry: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#131b22"/>
+            <path d="M100 155 Q160 55 220 155" fill="none" stroke="#16a34a" stroke-width="4"/>
+            <g fill="#31102f" stroke="#a855f7" stroke-width="1.2">
+              <circle cx="154" cy="88" r="5"/><circle cx="166" cy="88" r="5"/><circle cx="160" cy="78" r="5"/>
+              <circle cx="160" cy="97" r="5"/>
+            </g>
+            <text x="14" y="24" fill="#c084fc" font-size="10" font-family="monospace">RUBUS CANES • SOUTH BALCONY</text>
+          </svg>`,
+        plumeria: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#142018"/>
+            <path d="M160 170 L160 105 M160 120 L125 90 M160 120 L195 90" stroke="#a8a29e" stroke-width="9" stroke-linecap="round"/>
+            <!-- Frangipani 5-Petal Pinwheel Flower -->
+            <g transform="translate(160, 78)" fill="#fef9c3" stroke="#fde047" stroke-width="1.5">
+              <ellipse cx="0" cy="-18" rx="8" ry="16"/>
+              <ellipse cx="17" cy="-6" rx="8" ry="16" transform="rotate(72 17 -6)"/>
+              <ellipse cx="11" cy="15" rx="8" ry="16" transform="rotate(144 11 15)"/>
+              <ellipse cx="-11" cy="15" rx="8" ry="16" transform="rotate(216 -11 15)"/>
+              <ellipse cx="-17" cy="-6" rx="8" ry="16" transform="rotate(288 -17 -6)"/>
+              <circle cx="0" cy="0" r="6" fill="#facc15"/>
+            </g>
+            <text x="14" y="24" fill="#fde047" font-size="10" font-family="monospace">PLUMERIA • WINTER DORMANCY</text>
+          </svg>`,
+        bauhinia: `
+          <svg viewBox="0 0 320 200" class="w-full h-full" role="img" aria-label="${title}">
+            <rect width="320" height="200" fill="#161d24"/>
+            <!-- Bilobed Twin Leaf -->
+            <path d="M160 130 C120 135 105 75 138 62 C152 56 160 72 160 82 C160 72 168 56 182 62 C215 75 200 135 160 130 Z" fill="#22c55e" stroke="#86efac" stroke-width="1.5"/>
+            <circle cx="195" cy="65" r="14" fill="#ec4899" opacity="0.85"/>
+            <text x="14" y="24" fill="#f472b6" font-size="10" font-family="monospace">BAUHINIA • ORCHID TREE</text>
+          </svg>`
+      };
+      return artMap[theme] || artMap.clarinervium;
+    }
+
+    // =========================================================================
+    // 4. WATERING DUE CALCULATION & SEASONAL MODE LOGIC
+    // =========================================================================
+    function computeWateringStatus(plant) {
+      const interval = currentSeason === 'summer'
+        ? (Number(plant.summerIntervalDays) || 4)
+        : (Number(plant.winterIntervalDays) || 8);
+      const lastDateStr = plant.lastWatered || (plant.logs && plant.logs.find(l => l.type === 'Watering')?.date) || '2026-11-05';
+      const today = new Date(TODAY_STR + 'T08:00:00');
+      const lastDate = new Date(lastDateStr + 'T08:00:00');
+      const elapsedDays = Math.max(0, Math.round((today - lastDate) / (1000 * 60 * 60 * 24)));
+      const remainingDays = interval - elapsedDays;
+
+      if (remainingDays <= 0) {
+        return {
+          state: 'due',
+          label: remainingDays === 0 ? 'Water Due Today' : `Due (${Math.abs(remainingDays)}d ago)`,
+          badgeClass: 'bg-amber-950/90 text-amber-300 border border-amber-600/60',
+          elapsedDays,
+          interval
+        };
+      } else if (remainingDays <= 2) {
+        return {
+          state: 'soon',
+          label: `Due in ${remainingDays}d`,
+          badgeClass: 'bg-sky-950/80 text-sky-200 border border-sky-700/50',
+          elapsedDays,
+          interval
+        };
+      }
+      return {
+        state: 'ok',
+        label: `Next in ${remainingDays}d`,
+        badgeClass: 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60',
+        elapsedDays,
+        interval
+      };
+    }
+
+    function getWaterBadgeClass(waterType) {
+      if (waterType === 'Distilled Only') {
+        return 'bg-sky-950/90 text-sky-300 border border-sky-600/50';
+      }
+      if (waterType === 'pH 5.2 Adjusted') {
+        return 'bg-purple-950/90 text-purple-200 border border-purple-600/50';
+      }
+      return 'bg-[#14281f] text-emerald-200/90 border border-emerald-800/50';
+    }
+
+    function setSeasonMode(mode) {
+      currentSeason = mode === 'summer' ? 'summer' : 'winter';
+      saveState();
+      updateSeasonHeaderUI();
+      renderRoster();
+      if (currentDetailPlantId) {
+        openPlantDetailModal(currentDetailPlantId);
+      }
+      showToast(`Switched to ${currentSeason === 'summer' ? 'Summer' : 'Winter'} Mode watering intervals`, currentSeason === 'summer' ? 'amber' : 'emerald');
+    }
+
+    function updateSeasonHeaderUI() {
+      const btnSummer = document.getElementById('btnSeasonSummer');
+      const btnWinter = document.getElementById('btnSeasonWinter');
+      const banner = document.getElementById('seasonBannerText');
+      const kpiSub = document.getElementById('kpiSeasonSub');
+
+      if (currentSeason === 'summer') {
+        btnSummer.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/20 text-amber-200 border border-amber-500/50 shadow';
+        btnWinter.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-300/60 hover:text-white';
+        banner.className = 'text-xs px-3 py-1 rounded-lg bg-amber-950/70 border border-amber-700/40 text-amber-200 flex items-center gap-2';
+        banner.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span><span><strong>Summer Mode Active:</strong> Frequent balcony irrigation; keep carnivorous trays filled with distilled water; shield Hoyas from scorching midday sun.</span>`;
+        if (kpiSub) kpiSub.textContent = 'Based on Summer intervals';
+      } else {
+        btnWinter.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/20 text-sky-200 border border-sky-400/50 shadow';
+        btnSummer.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-300/60 hover:text-white';
+        banner.className = 'text-xs px-3 py-1 rounded-lg bg-sky-950/70 border border-sky-700/40 text-sky-200 flex items-center gap-2';
+        banner.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span><span><strong>Winter Mode Active:</strong> Extended watering intervals; protect <em>Delonix regia</em> &lt;10–12°C; Blueberry pruning in Jan–Feb.</span>`;
+        if (kpiSub) kpiSub.textContent = 'Based on Winter intervals';
+      }
+    }
+
+    // =========================================================================
+    // 5. RENDER PLANT ROSTER, CATEGORIES & KPI STRIP
+    // =========================================================================
+    function renderCategoryPills() {
+      const container = document.getElementById('categoryPillsContainer');
+      if (!container) return;
+      const categories = ['All', 'Bonsai & Trees', 'Aroids & Tropicals', 'Hoyas & Epiphytes', 'Terrarium & Rare', 'Carnivorous', 'Balcony Fruit & Trees'];
+      container.innerHTML = categories.map(cat => {
+        const count = cat === 'All' ? plantsState.length : plantsState.filter(p => p.category === cat).length;
+        const active = selectedCategory === cat;
+        const cls = active
+          ? 'bg-emerald-600 text-white border-emerald-400 shadow'
+          : 'bg-[#0b1611] text-emerald-200/80 border-emerald-800/60 hover:bg-[#152920]';
+        return `<button type="button" onclick="selectCategoryFilter('${escapeHtml(cat)}')" class="px-3 py-1.5 rounded-xl text-xs font-medium border whitespace-nowrap flex items-center gap-1.5 transition ${cls}">
+          <span>${escapeHtml(cat)}</span>
+          <span class="px-1.5 py-0.2 rounded-full text-[10px] ${active ? 'bg-emerald-800 text-emerald-100' : 'bg-emerald-950 text-emerald-300/80'}">${count}</span>
+        </button>`;
+      }).join('');
+    }
+
+    function selectCategoryFilter(cat) {
+      selectedCategory = cat;
+      renderCategoryPills();
+      renderRoster();
+    }
+
+    function renderRoster() {
+      renderCategoryPills();
+      const searchVal = (document.getElementById('rosterSearchInput')?.value || '').trim().toLowerCase();
+      const waterFilter = document.getElementById('waterTypeFilter')?.value || 'all';
+      const dueFilter = document.getElementById('dueStatusFilter')?.value || 'all';
+
+      // Update KPIs
+      let remindersCount = 0;
+      let specialWaterCount = 0;
+      let totalLogsCount = 0;
+      plantsState.forEach(p => {
+        remindersCount += (p.reminders ? p.reminders.length : 0);
+        if (p.waterType !== 'Tap / Filtered') specialWaterCount++;
+        totalLogsCount += (p.logs ? p.logs.length : 0);
+      });
+
+      document.getElementById('kpiTotalPlants').textContent = String(plantsState.length);
+      document.getElementById('rosterCountBadge').textContent = String(plantsState.length);
+      document.getElementById('kpiDueReminders').textContent = String(remindersCount);
+      document.getElementById('kpiSpecialWater').textContent = String(specialWaterCount);
+      document.getElementById('kpiTotalLogs').textContent = String(totalLogsCount);
+      document.getElementById('logCountBadge').textContent = String(totalLogsCount);
+      renderUpcomingRemindersCard();
+
+      const filtered = plantsState.filter(p => {
+        if (selectedCategory !== 'All' && p.category !== selectedCategory) return false;
+        if (waterFilter !== 'all' && p.waterType !== waterFilter) return false;
+        if (dueFilter === 'has-reminder' && (!p.reminders || p.reminders.length === 0)) return false;
+        if (searchVal) {
+          const hay = [
+            p.name, p.scientificName, p.category, p.location, p.soilMix, p.sunExposure,
+            p.summerWatering, p.winterWatering, p.careNotes,
+            ...(p.logs || []).map(l => `${l.type} ${l.note}`)
+          ].join(' ').toLowerCase();
+          if (!hay.includes(searchVal)) return false;
+        }
+        return true;
+      });
+
+      const grid = document.getElementById('plantsGrid');
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full bg-[#112119] border border-emerald-900/60 rounded-2xl p-8 text-center space-y-2">
+          <p class="text-sm font-semibold text-white">No plants match your current filter</p>
+          <p class="text-xs text-emerald-300/70">Try clearing the search query or click "Add Plant + Web Lookup" to add a new species.</p>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => {
+        const st = computeWateringStatus(p);
+        const latestLog = (p.logs && p.logs.length > 0) ? p.logs[0] : null;
+        const activeWaterText = currentSeason === 'summer' ? p.summerWatering : p.winterWatering;
+        const activeSeasonLabel = currentSeason === 'summer' ? 'Summer Watering' : 'Winter Watering';
+        const activeSeasonColor = currentSeason === 'summer' ? 'text-amber-300' : 'text-sky-300';
+
+        const visualHtml = p.imageUrl
+          ? `<img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.name)}" class="w-full h-full object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='block';"/><div class="hidden w-full h-full">${getBotanicalSvg(p.svgTheme, p.name)}</div>`
+          : getBotanicalSvg(p.svgTheme, p.name);
+
+        return `
+          <article class="card-glow bg-[#112119] border border-emerald-900/60 rounded-2xl overflow-hidden flex flex-col justify-between">
+            <div>
+              <!-- Picture Banner -->
+              <div class="relative h-44 bg-[#09140f] border-b border-emerald-900/50 cursor-pointer overflow-hidden" onclick="openPlantDetailModal('${escapeHtml(p.id)}')">
+                ${visualHtml}
+                <div class="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
+                  <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-black/75 text-emerald-200 backdrop-blur-sm border border-emerald-700/40">${escapeHtml(p.category)}</span>
+                  <span class="px-2 py-0.5 rounded-lg text-[10px] font-medium backdrop-blur-sm ${getWaterBadgeClass(p.waterType)}">${escapeHtml(p.waterType)}</span>
+                </div>
+                ${(p.reminders && p.reminders.length > 0)
+                  ? `<div class="absolute bottom-2.5 right-2.5">
+                      <span class="px-2.5 py-1 rounded-lg text-[11px] font-semibold shadow backdrop-blur-sm bg-amber-950/90 text-amber-200 border border-amber-600/60">⏰ ${escapeHtml(p.reminders[0].date)}</span>
+                    </div>`
+                  : ''}
+              </div>
+
+              <!-- Card Content -->
+              <div class="p-4 space-y-3">
+                <div class="flex items-start justify-between gap-2 cursor-pointer" onclick="openPlantDetailModal('${escapeHtml(p.id)}')">
+                  <div>
+                    <h3 class="text-base font-bold text-white leading-snug hover:text-emerald-300 transition">${escapeHtml(p.name)}</h3>
+                    <p class="text-xs italic text-emerald-300/75">${escapeHtml(p.scientificName)} • <span class="not-italic text-emerald-200/70">${escapeHtml(p.location)}</span></p>
+                  </div>
+                </div>
+
+                <!-- Recommended Care Specs -->
+                <div class="space-y-2 text-xs bg-[#0b1611] p-3 rounded-xl border border-emerald-900/50">
+                  <div>
+                    <span class="font-semibold text-amber-300">Soil Mix:</span>
+                    <span class="text-emerald-100/85 ml-1">${escapeHtml(p.soilMix)}</span>
+                  </div>
+                  <div>
+                    <span class="font-semibold text-yellow-300">Sun:</span>
+                    <span class="text-emerald-100/85 ml-1">${escapeHtml(p.sunExposure)}</span>
+                  </div>
+                  <div class="pt-1 border-t border-emerald-900/50">
+                    <span class="font-semibold ${activeSeasonColor}">${activeSeasonLabel}:</span>
+                    <span class="text-emerald-100/90 ml-1">${escapeHtml(activeWaterText)}</span>
+                  </div>
+                </div>
+
+                <!-- Latest Event Log Preview -->
+                <div class="px-3 py-2 rounded-xl bg-[#0d1a14] border border-emerald-900/40 text-[11px] text-emerald-200/85">
+                  ${latestLog
+                    ? `<div class="flex items-center justify-between text-emerald-400 font-medium mb-0.5">
+                        <span>Latest: ${escapeHtml(latestLog.type)}</span>
+                        <span class="font-mono text-[10px] text-emerald-300/70">${escapeHtml(latestLog.date)}</span>
+                      </div>
+                      <p class="line-clamp-2 text-emerald-100/80">${escapeHtml(latestLog.note)}</p>`
+                    : `<span class="text-emerald-400/60">No events logged yet — click Log Event below.</span>`
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Footer Actions -->
+            <div class="px-4 pb-3.5 pt-1 flex items-center gap-2">
+              <button type="button" onclick="openQuickReminderModal('${escapeHtml(p.id)}')" class="px-3 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-800/80 text-amber-200 border border-amber-700/50 text-xs font-medium flex items-center gap-1 transition" title="Add timed reminder & iPhone Calendar alert">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                <span>Remind</span>
+              </button>
+              <button type="button" onclick="openPlantDetailModal('${escapeHtml(p.id)}')" class="flex-1 py-1.5 px-3 rounded-xl bg-[#173024] hover:bg-emerald-700 text-emerald-100 hover:text-white border border-emerald-700/50 text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+                <span>Care &amp; Event Log (${(p.logs || []).length})</span>
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </article>`;
+      }).join('');
+    }
+
+    // =========================================================================
+    // 6. PLANT DETAIL MODAL & PER-PLANT FREE-TEXT EVENT LOGGING
+    // =========================================================================
+    function openPlantDetailModal(plantId) {
+      const plant = plantsState.find(p => p.id === plantId);
+      if (!plant) return;
+      currentDetailPlantId = plantId;
+
+      document.getElementById('detailCategoryBadge').textContent = plant.category;
+      document.getElementById('detailPlantName').textContent = plant.name;
+      document.getElementById('detailScientificName').textContent = plant.scientificName;
+      document.getElementById('detailLocationBadge').textContent = `📍 ${plant.location}`;
+
+      const waterBadge = document.getElementById('detailWaterBadge');
+      waterBadge.textContent = `💧 ${plant.waterType}`;
+      waterBadge.className = `px-2.5 py-1 rounded-lg text-xs font-medium ${getWaterBadgeClass(plant.waterType)}`;
+
+      const remCount = (plant.reminders || []).length;
+      const dueBadge = document.getElementById('detailDueBadge');
+      dueBadge.textContent = remCount > 0 ? `⏰ ${remCount} Timed Reminder(s)` : 'Check soil manually';
+      dueBadge.className = remCount > 0
+        ? 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-950/90 text-amber-200 border border-amber-600/60'
+        : 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-800/60';
+
+      document.getElementById('detailSoilText').textContent = plant.soilMix;
+      document.getElementById('detailSunText').textContent = plant.sunExposure;
+      document.getElementById('detailSummerText').textContent = plant.summerWatering;
+      document.getElementById('detailSummerDays').textContent = `Every ${plant.summerIntervalDays || 4}d`;
+      document.getElementById('detailWinterText').textContent = plant.winterWatering;
+      document.getElementById('detailWinterDays').textContent = `Every ${plant.winterIntervalDays || 8}d`;
+
+      const summerCard = document.getElementById('detailSummerCard');
+      const winterCard = document.getElementById('detailWinterCard');
+      if (currentSeason === 'summer') {
+        summerCard.className = 'p-3.5 rounded-xl border-2 border-amber-500/80 bg-amber-950/25 space-y-1';
+        winterCard.className = 'p-3.5 rounded-xl border border-emerald-900/50 bg-[#0b1611] opacity-75 space-y-1';
+      } else {
+        winterCard.className = 'p-3.5 rounded-xl border-2 border-sky-400/80 bg-sky-950/25 space-y-1';
+        summerCard.className = 'p-3.5 rounded-xl border border-emerald-900/50 bg-[#0b1611] opacity-75 space-y-1';
+      }
+
+      document.getElementById('detailNotesContent').textContent = plant.careNotes || 'Standard seasonal botanical protocol.';
+      const wikiLink = document.getElementById('detailWikiLink');
+      wikiLink.href = plant.wikiUrl || `https://en.wikipedia.org/wiki/${encodeURIComponent(plant.scientificName || plant.name)}`;
+
+      // Render Visual
+      const imgWrap = document.getElementById('detailImageWrapper');
+      if (plant.imageUrl) {
+        imgWrap.innerHTML = `<img src="${escapeHtml(plant.imageUrl)}" alt="${escapeHtml(plant.name)}" class="w-full h-full object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='block';"/><div class="hidden w-full h-full">${getBotanicalSvg(plant.svgTheme, plant.name)}</div>`;
+      } else {
+        imgWrap.innerHTML = getBotanicalSvg(plant.svgTheme, plant.name);
+      }
+
+      document.getElementById('detailLogDate').value = TODAY_STR;
+      renderDetailPlantLogs(plant);
+
+      document.getElementById('plantDetailModal').classList.remove('hidden');
+    }
+
+    function closePlantDetailModal() {
+      document.getElementById('plantDetailModal').classList.add('hidden');
+      currentDetailPlantId = null;
+    }
+
+    function renderDetailPlantLogs(plant) {
+      const remBox = document.getElementById('detailPlantRemindersBox');
+      if (remBox) {
+        const rems = plant.reminders || [];
+        if (rems.length > 0) {
+          remBox.innerHTML = `<div class="p-3 rounded-xl bg-amber-950/20 border border-amber-800/50 space-y-2">
+            <div class="text-xs font-semibold text-amber-300">Timed Reminders for ${escapeHtml(plant.name)}</div>
+            ${rems.map(r => `
+              <div class="flex flex-wrap items-center justify-between gap-2 text-xs bg-[#0b1611] px-3 py-2 rounded-lg border border-amber-900/40">
+                <div>
+                  <span class="font-mono text-amber-300 mr-2">${escapeHtml(r.date)}</span>
+                  <span class="font-semibold text-white">${escapeHtml(r.title)}</span>
+                  ${r.note ? `<span class="text-emerald-200/70 ml-1">— ${escapeHtml(r.note)}</span>` : ''}
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="downloadReminderICS('${escapeHtml(plant.id)}', '${escapeHtml(r.id)}')" class="px-2.5 py-1 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-semibold">Add to Calendar (.ics)</button>
+                  <button type="button" onclick="deletePlantReminder('${escapeHtml(plant.id)}', '${escapeHtml(r.id)}')" class="px-2 py-1 rounded-md text-rose-400 hover:bg-rose-950/60 text-[11px]">✕</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>`;
+        } else {
+          remBox.innerHTML = '';
+        }
+      }
+
+      const container = document.getElementById('detailPlantLogsContainer');
+      const logs = plant.logs || [];
+      if (logs.length === 0) {
+        container.innerHTML = `<p class="text-xs text-emerald-300/60 italic py-3">No events recorded yet. Add your first free-text note or care event above.</p>`;
+        return;
+      }
+
+      container.innerHTML = logs.map(log => `
+        <div class="p-3.5 rounded-xl bg-[#0b1611] border border-emerald-900/60 flex items-start justify-between gap-3">
+          <div class="space-y-1.5 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-700/50">${escapeHtml(log.type)}</span>
+              <span class="text-xs font-mono text-emerald-300/75">${escapeHtml(log.date)}</span>
+            </div>
+            <p class="text-xs sm:text-sm text-emerald-50/95 leading-relaxed">${escapeHtml(log.note)}</p>
+            ${log.photoUrl ? `<img src="${escapeHtml(log.photoUrl)}" alt="Event progress photo" class="mt-2 max-h-44 rounded-xl border border-emerald-800/60 object-cover"/>` : ''}
+          </div>
+          <button type="button" onclick="deletePlantLogEntry('${escapeHtml(plant.id)}', '${escapeHtml(log.id)}')" class="text-xs text-rose-400/70 hover:text-rose-300 px-2 py-1 rounded hover:bg-rose-950/50 transition" title="Delete log entry">
+            ✕
+          </button>
+        </div>
+      `).join('');
+    }
+
+    let pendingDetailLogPhoto = '';
+
+    async function handleDetailLogPhotoSelect(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const label = document.getElementById('detailLogPhotoLabel');
+      if (label) label.textContent = 'Saving...';
+      try {
+        const resized = await resizeImageToDataUrl(file, 900);
+        const plantId = currentDetailPlantId || 'log';
+        pendingDetailLogPhoto = await persistPlantPhoto(plantId + '-log', resized);
+        if (label) label.textContent = 'Photo Ready ✓';
+        showToast('Progress photo attached to event');
+      } catch (err) {
+        if (label) label.textContent = 'Attach Photo';
+        showToast('Could not process photo', 'rose');
+      }
+    }
+
+    function addLogFromDetailModal() {
+      if (!currentDetailPlantId) return;
+      const plant = plantsState.find(p => p.id === currentDetailPlantId);
+      if (!plant) return;
+
+      const type = document.getElementById('detailLogType').value || 'Note / Diagnosis';
+      const date = document.getElementById('detailLogDate').value || TODAY_STR;
+      const noteInput = document.getElementById('detailLogNote');
+      const note = noteInput.value.trim() || `${type} completed (${ currentSeason === 'summer' ? 'Summer' : 'Winter' } mode).`;
+
+      if (!plant.logs) plant.logs = [];
+      const newEntry = {
+        id: 'log-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        date,
+        type,
+        note
+      };
+      if (pendingDetailLogPhoto) {
+        newEntry.photoUrl = pendingDetailLogPhoto;
+        pendingDetailLogPhoto = '';
+        const lbl = document.getElementById('detailLogPhotoLabel');
+        if (lbl) lbl.textContent = 'Attach Photo';
+        const inp = document.getElementById('detailLogPhotoInput');
+        if (inp) inp.value = '';
+      }
+      plant.logs.unshift(newEntry);
+      plant.logs.sort((a, b) => b.date.localeCompare(a.date));
+
+      if (type === 'Watering' && (!plant.lastWatered || date >= plant.lastWatered)) {
+        plant.lastWatered = date;
+      }
+
+      noteInput.value = '';
+      saveState();
+      openPlantDetailModal(plant.id);
+      renderRoster();
+      renderGlobalLogs();
+      showToast(`Added "${type}" log to ${plant.name}`);
+    }
+
+    function deletePlantLogEntry(plantId, logId) {
+      const plant = plantsState.find(p => p.id === plantId);
+      if (!plant || !plant.logs) return;
+      plant.logs = plant.logs.filter(l => l.id !== logId);
+      saveState();
+      if (currentDetailPlantId === plantId) {
+        renderDetailPlantLogs(plant);
+      }
+      renderRoster();
+      renderGlobalLogs();
+      showToast('Deleted log entry', 'amber');
+    }
+
+    function quickWaterPlantById(plantId) {
+      const plant = plantsState.find(p => p.id === plantId);
+      if (!plant) return;
+      plant.lastWatered = TODAY_STR;
+      if (!plant.logs) plant.logs = [];
+      const waterNote = plant.waterType === 'Distilled Only'
+        ? 'Watered using distilled water.'
+        : plant.waterType === 'pH 5.2 Adjusted'
+        ? 'Hand-watered with pH 5.2 vinegar-adjusted water.'
+        : `Watered on ${currentSeason} schedule.`;
+      plant.logs.unshift({
+        id: 'log-' + Date.now(),
+        date: TODAY_STR,
+        type: 'Watering',
+        note: waterNote
+      });
+      saveState();
+      renderRoster();
+      renderGlobalLogs();
+      showToast(`Logged watering for ${plant.name}`);
+    }
+
+    function quickWaterCurrentPlant() {
+      if (!currentDetailPlantId) return;
+      quickWaterPlantById(currentDetailPlantId);
+      openPlantDetailModal(currentDetailPlantId);
+    }
+
+    async function uploadCustomPlantPhoto(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file || !currentDetailPlantId) return;
+      try {
+        const resizedDataUrl = await resizeImageToDataUrl(file, 900);
+        const plant = plantsState.find(p => p.id === currentDetailPlantId);
+        if (plant) {
+          plant.imageUrl = await persistPlantPhoto(plant.id, resizedDataUrl);
+          saveState();
+          openPlantDetailModal(currentDetailPlantId);
+          renderRoster();
+          showToast(`Saved permanent photo for ${plant.name}`);
+        }
+      } catch (err) {
+        showToast('Failed to process photo', 'rose');
+      }
+    }
+
+    async function persistPlantPhoto(plantId, dataUrl) {
+      if (window.location.protocol.startsWith('http') && dataUrl && dataUrl.startsWith('data:image/')) {
+        try {
+          const res = await fetch('/api/upload-photo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plantId, imageDataUrl: dataUrl })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.url) return data.url;
+          }
+        } catch (err) {}
+      }
+      return dataUrl;
+    }
+
+    // =========================================================================
+    // 7. LIVE WEB BOTANICAL LOOKUP ENGINE (WIKIPEDIA + iNATURALIST + CARE AI)
+    // =========================================================================
+    function synthesizeBotanicalCare(title, scientificName, extractText) {
+      const combined = `${title} ${scientificName} ${extractText}`.toLowerCase();
+
+      // Intelligent Botanical Family / Genus Care Rules Engine
+      if (combined.includes('drosera') || combined.includes('dionaea') || combined.includes('sarracenia') || combined.includes('pinguicula') || combined.includes('carnivorous') || combined.includes('flytrap') || combined.includes('sundew')) {
+        return {
+          category: 'Carnivorous',
+          location: 'South Balcony / Bog Tray',
+          waterType: 'Distilled Only',
+          soilMix: 'Nutrient-free carnivorous bog mix: 50% unfertilized sphagnum peat moss + 50% rinsed perlite/silica sand (Zero fertilizer).',
+          sunExposure: 'Full direct sun (6+ hrs daily) or intense grow lights.',
+          summerWatering: 'Constant tray method: sit pot in 1–2 cm of distilled or RO water continuously.',
+          summerDays: 2,
+          winterWatering: 'Keep substrate damp with distilled water; reduce standing tray water during cool dormancy.',
+          winterDays: 5
+        };
+      }
+      if (combined.includes('nepenthes') || combined.includes('pitcher plant') || combined.includes('cephalotus')) {
+        return {
+          category: 'Carnivorous',
+          location: 'Bright Humid Indoor',
+          waterType: 'Distilled Only',
+          soilMix: 'Loose epiphytic carnivorous mix: 50% long-fiber sphagnum moss, 30% perlite, 20% orchid bark.',
+          sunExposure: 'Bright indirect light with 60–80% humidity.',
+          summerWatering: 'Top-water every 3–4 days with distilled water so moss stays spongy-damp.',
+          summerDays: 3,
+          winterWatering: 'Top-water every 5–7 days with distilled water.',
+          winterDays: 6
+        };
+      }
+      if (combined.includes('hoya') || combined.includes('wax plant') || combined.includes('dischidia') || combined.includes('epiphyte')) {
+        return {
+          category: 'Hoyas & Epiphytes',
+          location: 'Indoor (Bright Filtered Light)',
+          waterType: 'Distilled Only',
+          soilMix: 'Ultra-airy epiphytic mix: 45% coarse perlite, 35% orchid bark / Deshanit Aroid Mix, 20% coco coir.',
+          sunExposure: 'Bright indirect light with gentle morning sun; protect from scorching midday sun.',
+          summerWatering: 'Every 6–8 days; soak thoroughly only after chunky substrate dries nearly through.',
+          summerDays: 7,
+          winterWatering: 'Every 10–14 days; allow mix to dry completely between waterings.',
+          winterDays: 12
+        };
+      }
+      if (combined.includes('monstera') || combined.includes('philodendron') || combined.includes('anthurium') || combined.includes('alocasia') || combined.includes('syngonium') || combined.includes('epipremnum') || combined.includes('araceae') || combined.includes('aroid')) {
+        return {
+          category: 'Aroids & Tropicals',
+          location: 'Indoor (East / Filtered South Window)',
+          waterType: 'Tap / Filtered',
+          soilMix: 'Chunky aroid substrate: Deshanit Professional Aroid Mix (40% orchid bark, 30% coarse perlite, 30% coco coir & charcoal).',
+          sunExposure: 'Bright, filtered indirect light (avoid direct midday southern sun on foliage).',
+          summerWatering: 'Every 5–7 days when top 40–50% of chunky mix dries.',
+          summerDays: 6,
+          winterWatering: 'Every 8–12 days when top two-thirds dries; reduce liquid feeding.',
+          winterDays: 10
+        };
+      }
+      if (combined.includes('vaccinium') || combined.includes('blueberry') || combined.includes('azalea') || combined.includes('camellia') || combined.includes('ericaceae')) {
+        return {
+          category: 'Balcony Fruit & Trees',
+          location: 'South Balcony',
+          waterType: 'pH 5.2 Adjusted',
+          soilMix: 'Acidic ericaceous mix (pH 4.5–5.5): 50% peat moss, 30% pine bark fines, 20% perlite + elemental sulfur.',
+          sunExposure: 'Full direct sun (6–8 hrs daily on south balcony).',
+          summerWatering: 'Every 1–2 days using pH 5.2 vinegar-adjusted water to prevent alkaline lockup.',
+          summerDays: 2,
+          winterWatering: 'Every 4–6 days with pH 5.2 adjusted water; prune dead wood in Jan–Feb.',
+          winterDays: 5
+        };
+      }
+      if (combined.includes('cactus') || combined.includes('succulent') || combined.includes('agave') || combined.includes('echeveria') || combined.includes('crassula') || combined.includes('haworthia') || combined.includes('aloe') || combined.includes('euphorbia')) {
+        return {
+          category: 'Bonsai & Trees',
+          location: 'South Balcony',
+          waterType: 'Tap / Filtered',
+          soilMix: 'Gritty mineral succulent mix: 65% pumice/coarse perlite/tuff + 35% coco coir.',
+          sunExposure: 'Full direct southern sun (6+ hrs daily).',
+          summerWatering: 'Every 7–10 days; drench and let dry 100% between waterings.',
+          summerDays: 8,
+          winterWatering: 'Every 18–25 days; keep bone-dry during cool wet winter weeks.',
+          winterDays: 21
+        };
+      }
+      if (combined.includes('begonia') || combined.includes('ferns') || combined.includes('selaginella') || combined.includes('calathea') || combined.includes('maranta') || combined.includes('terrarium') || combined.includes('sonerila') || combined.includes('labisia')) {
+        return {
+          category: 'Terrarium & Rare',
+          location: 'High-Humidity Enclosure / East Indoor',
+          waterType: 'Distilled Only',
+          soilMix: 'Moisture-retentive airy rainforest blend: 50% Deshanit Aroid Mix, 30% sphagnum moss/coco coir, 20% perlite.',
+          sunExposure: 'Low to medium filtered light; keep humidity 70–85% and avoid direct sun.',
+          summerWatering: 'Every 4–5 days with distilled water; keep evenly moist.',
+          summerDays: 5,
+          winterWatering: 'Every 6–8 days with distilled water; avoid wetting leaves overnight.',
+          winterDays: 7
+        };
+      }
+      if (combined.includes('ficus') || combined.includes('acer') || combined.includes('juniper') || combined.includes('pinus') || combined.includes('bonsai') || combined.includes('tree') || combined.includes('citrus') || combined.includes('punica') || combined.includes('ulmus')) {
+        return {
+          category: 'Bonsai & Trees',
+          location: 'South Balcony',
+          waterType: 'Tap / Filtered',
+          soilMix: 'Structured bonsai/container mix: 50% pumice/lava/akadama, 30% pine bark, 20% coarse perlite.',
+          sunExposure: 'Full direct sun on south balcony (6+ hrs daily).',
+          summerWatering: 'Every 2–3 days in summer heat when surface substrate dries.',
+          summerDays: 2,
+          winterWatering: 'Every 6–9 days as winter transpiration slows.',
+          winterDays: 8
+        };
+      }
+
+      // Default Tropical / Balcony Plant Profile
+      return {
+        category: 'Aroids & Tropicals',
+        location: 'Bright Indoor / Covered Balcony',
+        waterType: 'Tap / Filtered',
+        soilMix: 'Well-draining container mix: 50% coco coir / potting mix, 30% perlite, 20% orchid bark.',
+        sunExposure: 'Bright indirect light to gentle morning sun.',
+        summerWatering: 'Every 4–6 days when top 3 cm of soil feels dry.',
+        summerDays: 5,
+        winterWatering: 'Every 8–11 days; allow top half of soil to dry out in winter.',
+        winterDays: 9
+      };
+    }
+
+    async function searchWebForPlant() {
+      const queryInput = document.getElementById('webLookupQuery');
+      const statusEl = document.getElementById('webLookupStatus');
+      const resultsBox = document.getElementById('webLookupResults');
+      const query = (queryInput?.value || document.getElementById('formCommonName')?.value || '').trim();
+
+      if (!query) {
+        showToast('Enter a plant or tree name first', 'amber');
+        return;
+      }
+
+      statusEl.textContent = 'Searching Wikipedia & iNaturalist...';
+      resultsBox.classList.remove('hidden');
+      resultsBox.innerHTML = `<div class="text-xs text-emerald-300/80 py-2">Querying Wikimedia &amp; iNaturalist botanical databases for "${escapeHtml(query)}"...</div>`;
+
+      const candidates = [];
+
+      // 1. Query iNaturalist Taxa API (great for scientific + common names + photos)
+      try {
+        const inatRes = await fetch(`https://api.inaturalist.org/v1/taxa?q=${encodeURIComponent(query)}&per_page=3`);
+        if (inatRes.ok) {
+          const inatData = await inatRes.json();
+          if (inatData && Array.isArray(inatData.results)) {
+            inatData.results.forEach(item => {
+              const sciName = item.name || query;
+              const comName = item.preferred_common_name
+                ? item.preferred_common_name.replace(/\b\w/g, c => c.toUpperCase())
+                : sciName;
+              const photo = item.default_photo ? (item.default_photo.medium_url || item.default_photo.square_url) : '';
+              const wikiUrl = item.wikipedia_url || `https://en.wikipedia.org/wiki/${encodeURIComponent(sciName)}`;
+              candidates.push({
+                source: 'iNaturalist + Wiki',
+                commonName: comName,
+                scientificName: sciName,
+                imageUrl: photo,
+                summary: item.wikipedia_summary ? item.wikipedia_summary.replace(/<[^>]+>/g, '') : `Botanical taxon (${item.iconic_taxon_name || 'Plantae'}) matched via iNaturalist.`,
+                wikiUrl
+              });
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('iNaturalist lookup fallback:', err);
+      }
+
+      // 2. Query MediaWiki Action API + REST Summary API
+      try {
+        const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query + ' plant')}&utf8=&format=json&origin=*&srlimit=3`;
+        const wikiSearchRes = await fetch(searchUrl);
+        if (wikiSearchRes.ok) {
+          const searchJson = await wikiSearchRes.json();
+          const hits = searchJson?.query?.search || [];
+          for (const hit of hits.slice(0, 2)) {
+            const sumRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(hit.title)}`);
+            if (sumRes.ok) {
+              const sumData = await sumRes.json();
+              const img = sumData.thumbnail?.source || sumData.originalimage?.source || '';
+              if (!candidates.some(c => c.scientificName.toLowerCase() === (sumData.title || '').toLowerCase())) {
+                candidates.push({
+                  source: 'Wikipedia',
+                  commonName: sumData.title || query,
+                  scientificName: sumData.description && sumData.description.toLowerCase().includes('species') ? sumData.title : (sumData.title || query),
+                  imageUrl: img,
+                  summary: sumData.extract || '',
+                  wikiUrl: sumData.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(hit.title)}`
+                });
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Wikipedia lookup fallback:', err);
+      }
+
+      // 3. Always provide a synthesized fallback candidate if offline or no exact match
+      if (candidates.length === 0) {
+        candidates.push({
+          source: 'Botanical Care Engine',
+          commonName: query,
+          scientificName: query,
+          imageUrl: '',
+          summary: `Synthesized care profile for ${query} based on botanical genus and Mediterranean indoor/balcony conditions.`,
+          wikiUrl: `https://en.wikipedia.org/wiki/${encodeURIComponent(query)}`
+        });
+      }
+
+      lastWebCandidates = candidates;
+      statusEl.textContent = `Found ${candidates.length} match(es) — click to auto-fill`;
+
+      resultsBox.innerHTML = candidates.map((c, idx) => `
+        <div class="p-2.5 rounded-xl bg-[#09140f] border border-emerald-800/70 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            ${c.imageUrl
+              ? `<img src="${escapeHtml(c.imageUrl)}" alt="${escapeHtml(c.commonName)}" class="w-12 h-12 rounded-lg object-cover shrink-0 border border-emerald-700/50"/>`
+              : `<div class="w-12 h-12 rounded-lg bg-emerald-950 flex items-center justify-center text-emerald-400 text-xs font-mono shrink-0">🌿</div>`
+            }
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <p class="text-xs sm:text-sm font-bold text-white truncate">${escapeHtml(c.commonName)}</p>
+                <span class="text-[10px] italic text-emerald-300/80 truncate">${escapeHtml(c.scientificName)}</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">${escapeHtml(c.source)}</span>
+              </div>
+              <p class="text-[11px] text-emerald-100/70 line-clamp-1">${escapeHtml(c.summary)}</p>
+            </div>
+          </div>
+          <button type="button" onclick="applyWebCandidate(${idx})" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shrink-0 transition">
+            Use &amp; Auto-Fill
+          </button>
+        </div>
+      `).join('');
+
+      // Automatically apply the top candidate so the user sees immediate results
+      applyWebCandidate(0);
+    }
+
+    function applyWebCandidate(idx) {
+      const cand = lastWebCandidates[idx];
+      if (!cand) return;
+      const care = synthesizeBotanicalCare(cand.commonName, cand.scientificName, cand.summary);
+
+      document.getElementById('formCommonName').value = cand.commonName;
+      document.getElementById('formScientificName').value = cand.scientificName;
+      document.getElementById('formCategory').value = care.category;
+      document.getElementById('formLocation').value = care.location;
+      document.getElementById('formWaterType').value = care.waterType;
+      if (cand.imageUrl) {
+        document.getElementById('formImageUrl').value = cand.imageUrl;
+      }
+      document.getElementById('formSoilMix').value = care.soilMix;
+      document.getElementById('formSunExposure').value = care.sunExposure;
+      document.getElementById('formSummerWatering').value = care.summerWatering;
+      document.getElementById('formSummerDays').value = care.summerDays;
+      document.getElementById('formWinterWatering').value = care.winterWatering;
+      document.getElementById('formWinterDays').value = care.winterDays;
+      document.getElementById('formCareNotes').value = cand.summary ? cand.summary.slice(0, 220) : '';
+      document.getElementById('formWikiUrl').value = cand.wikiUrl || '';
+
+      showToast(`Auto-filled care profile for ${cand.commonName}`);
+    }
+
+    async function fetchSinglePlantWebPhoto() {
+      if (!currentDetailPlantId) return;
+      const plant = plantsState.find(p => p.id === currentDetailPlantId);
+      if (!plant) return;
+
+      showToast(`Fetching web photo for ${plant.scientificName}...`);
+      const photoUrl = await fetchWikiOrInatPhotoForSpecies(plant.scientificName, plant.name);
+      if (photoUrl) {
+        plant.imageUrl = photoUrl;
+        saveState();
+        openPlantDetailModal(plant.id);
+        renderRoster();
+        showToast(`Loaded web photo for ${plant.name}`);
+      } else {
+        showToast('Could not reach external image service; keeping botanical SVG illustration', 'amber');
+      }
+    }
+
+    async function fetchWikiOrInatPhotoForSpecies(scientificName, commonName) {
+      const queries = [scientificName, commonName].filter(Boolean);
+      for (const q of queries) {
+        try {
+          const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.thumbnail?.source) return data.thumbnail.source;
+          }
+        } catch (e) {
+          // ignore and try iNaturalist
+        }
+        try {
+          const inat = await fetch(`https://api.inaturalist.org/v1/taxa?q=${encodeURIComponent(q)}&per_page=1`);
+          if (inat.ok) {
+            const d = await inat.json();
+            const photo = d?.results?.[0]?.default_photo?.medium_url;
+            if (photo) return photo;
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+      return '';
+    }
+
+    async function syncAllWikipediaPhotos() {
+      const btn = document.getElementById('btnSyncPhotos');
+      if (btn) btn.disabled = true;
+      showToast('Fetching botanical photos from Wikipedia & iNaturalist...');
+      let updated = 0;
+      for (const plant of plantsState) {
+        if (!plant.imageUrl) {
+          const url = await fetchWikiOrInatPhotoForSpecies(plant.scientificName, plant.name);
+          if (url) {
+            plant.imageUrl = url;
+            updated++;
+            renderRoster();
+          }
+        }
+      }
+      saveState();
+      if (btn) btn.disabled = false;
+      if (updated > 0) {
+        showToast(`Loaded ${updated} botanical photos from the web!`);
+      } else {
+        showToast('All reachable web photos synced', 'emerald');
+      }
+    }
+
+    // =========================================================================
+    // 8. ADD / EDIT / DELETE PLANT MODAL LOGIC
+    // =========================================================================
+    function openPlantModal(plantId = '') {
+      const modal = document.getElementById('plantFormModal');
+      const deleteBtn = document.getElementById('btnDeletePlant');
+      document.getElementById('webLookupResults').classList.add('hidden');
+      document.getElementById('webLookupQuery').value = '';
+
+      if (plantId) {
+        const plant = plantsState.find(p => p.id === plantId);
+        if (!plant) return;
+        document.getElementById('plantFormTitle').textContent = `Edit ${plant.name}`;
+        document.getElementById('formPlantId').value = plant.id;
+        document.getElementById('formCommonName').value = plant.name;
+        document.getElementById('formScientificName').value = plant.scientificName || '';
+        document.getElementById('formCategory').value = plant.category || 'Aroids & Tropicals';
+        document.getElementById('formLocation').value = plant.location || '';
+        document.getElementById('formWaterType').value = plant.waterType || 'Tap / Filtered';
+        document.getElementById('formImageUrl').value = plant.imageUrl || '';
+        document.getElementById('formSoilMix').value = plant.soilMix || '';
+        document.getElementById('formSunExposure').value = plant.sunExposure || '';
+        document.getElementById('formSummerWatering').value = plant.summerWatering || '';
+        document.getElementById('formSummerDays').value = plant.summerIntervalDays || 5;
+        document.getElementById('formWinterWatering').value = plant.winterWatering || '';
+        document.getElementById('formWinterDays').value = plant.winterIntervalDays || 9;
+        document.getElementById('formCareNotes').value = plant.careNotes || '';
+        document.getElementById('formWikiUrl').value = plant.wikiUrl || '';
+        deleteBtn.classList.remove('hidden');
+      } else {
+        document.getElementById('plantFormTitle').textContent = 'Add New Plant & Fetch Care from Web';
+        document.getElementById('formPlantId').value = '';
+        document.getElementById('formCommonName').value = '';
+        document.getElementById('formScientificName').value = '';
+        document.getElementById('formCategory').value = 'Aroids & Tropicals';
+        document.getElementById('formLocation').value = 'Indoor (Bright Indirect)';
+        document.getElementById('formWaterType').value = 'Tap / Filtered';
+        document.getElementById('formImageUrl').value = '';
+        document.getElementById('formSoilMix').value = '';
+        document.getElementById('formSunExposure').value = '';
+        document.getElementById('formSummerWatering').value = '';
+        document.getElementById('formSummerDays').value = 5;
+        document.getElementById('formWinterWatering').value = '';
+        document.getElementById('formWinterDays').value = 9;
+        document.getElementById('formCareNotes').value = '';
+        document.getElementById('formWikiUrl').value = '';
+        deleteBtn.classList.add('hidden');
+      }
+      modal.classList.remove('hidden');
+    }
+
+    function closePlantModal() {
+      document.getElementById('plantFormModal').classList.add('hidden');
+    }
+
+    function editCurrentDetailPlant() {
+      if (!currentDetailPlantId) return;
+      const id = currentDetailPlantId;
+      closePlantDetailModal();
+      openPlantModal(id);
+    }
+
+    async function handleFormImageUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      try {
+        const resizedDataUrl = await resizeImageToDataUrl(file, 900);
+        const existingId = document.getElementById('formPlantId').value || ('plant-' + Date.now());
+        document.getElementById('formImageUrl').value = await persistPlantPhoto(existingId, resizedDataUrl);
+        showToast('Photo saved and attached to form');
+      } catch (err) {
+        showToast('Failed to process photo', 'rose');
+      }
+    }
+
+    function savePlantFromModal() {
+      const existingId = document.getElementById('formPlantId').value;
+      const name = document.getElementById('formCommonName').value.trim();
+      if (!name) {
+        showToast('Please enter a plant name', 'amber');
+        return;
+      }
+
+      const scientificName = document.getElementById('formScientificName').value.trim() || name;
+      const category = document.getElementById('formCategory').value;
+      const location = document.getElementById('formLocation').value.trim() || 'Indoor / Balcony';
+      const waterType = document.getElementById('formWaterType').value;
+      const imageUrl = document.getElementById('formImageUrl').value.trim();
+      const soilMix = document.getElementById('formSoilMix').value.trim() || 'Well-draining aroid/container mix (perlite, bark, coco coir).';
+      const sunExposure = document.getElementById('formSunExposure').value.trim() || 'Bright indirect light.';
+      const summerWatering = document.getElementById('formSummerWatering').value.trim() || 'Every 4–5 days when top soil dries.';
+      const summerIntervalDays = Math.max(1, Number(document.getElementById('formSummerDays').value) || 5);
+      const winterWatering = document.getElementById('formWinterWatering').value.trim() || 'Every 8–10 days in winter.';
+      const winterIntervalDays = Math.max(1, Number(document.getElementById('formWinterDays').value) || 9);
+      const careNotes = document.getElementById('formCareNotes').value.trim();
+      const wikiUrl = document.getElementById('formWikiUrl').value.trim() || `https://en.wikipedia.org/wiki/${encodeURIComponent(scientificName)}`;
+
+      if (existingId) {
+        const plant = plantsState.find(p => p.id === existingId);
+        if (plant) {
+          Object.assign(plant, {
+            name, scientificName, category, location, waterType, imageUrl,
+            soilMix, sunExposure, summerWatering, summerIntervalDays,
+            winterWatering, winterIntervalDays, careNotes, wikiUrl
+          });
+          showToast(`Updated ${name}`);
+        }
+      } else {
+        const newPlantId = 'plant-' + Date.now();
+        const newPlant = {
+          id: newPlantId,
+          name,
+          scientificName,
+          category,
+          location,
+          waterType,
+          imageUrl,
+          soilMix,
+          sunExposure,
+          summerWatering,
+          summerIntervalDays,
+          winterWatering,
+          winterIntervalDays,
+          careNotes,
+          wikiUrl,
+          svgTheme: category === 'Carnivorous' ? 'flytrap' : category === 'Bonsai & Trees' ? 'delonix' : category === 'Hoyas & Epiphytes' ? 'hoyacarnosa' : 'clarinervium',
+          lastWatered: TODAY_STR,
+          logs: [
+            {
+              id: 'log-' + Date.now(),
+              date: TODAY_STR,
+              type: 'Note / Diagnosis',
+              note: `Added ${name} (${scientificName}) to collection roster.`
+            }
+          ]
+        };
+        plantsState.unshift(newPlant);
+        showToast(`Added ${name} to your collection!`);
+      }
+
+      saveState();
+      closePlantModal();
+      renderRoster();
+      renderGlobalLogs();
+      populatePlantSelects();
+    }
+
+    function deletePlantFromModal() {
+      const existingId = document.getElementById('formPlantId').value;
+      if (!existingId) return;
+      const idx = plantsState.findIndex(p => p.id === existingId);
+      if (idx !== -1) {
+        const removed = plantsState.splice(idx, 1)[0];
+        saveState();
+        closePlantModal();
+        renderRoster();
+        renderGlobalLogs();
+        populatePlantSelects();
+        showToast(`Removed ${removed.name}`, 'amber');
+      }
+    }
+
+    // =========================================================================
+    // 9. GLOBAL EVENT LOG VIEW & QUICK LOG MODAL
+    // =========================================================================
+    function populatePlantSelects() {
+      const filterSel = document.getElementById('globalLogPlantFilter');
+      const quickSel = document.getElementById('quickLogPlantSelect');
+      if (filterSel) {
+        const currentVal = filterSel.value || 'all';
+        filterSel.innerHTML = `<option value="all">All Plants (${plantsState.length})</option>` +
+          plantsState.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} (${escapeHtml(p.scientificName)})</option>`).join('');
+        filterSel.value = currentVal;
+      }
+      if (quickSel) {
+        quickSel.innerHTML = plantsState.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} (${escapeHtml(p.scientificName)})</option>`).join('');
+      }
+    }
+
+    function renderGlobalLogs() {
+      const searchVal = (document.getElementById('globalLogSearch')?.value || '').trim().toLowerCase();
+      const plantFilter = document.getElementById('globalLogPlantFilter')?.value || 'all';
+      const typeFilter = document.getElementById('globalLogTypeFilter')?.value || 'all';
+
+      const allEntries = [];
+      plantsState.forEach(p => {
+        (p.logs || []).forEach(l => {
+          allEntries.push({
+            plantId: p.id,
+            plantName: p.name,
+            scientificName: p.scientificName,
+            category: p.category,
+            ...l
+          });
+        });
+      });
+
+      allEntries.sort((a, b) => b.date.localeCompare(a.date));
+
+      const filtered = allEntries.filter(item => {
+        if (plantFilter !== 'all' && item.plantId !== plantFilter) return false;
+        if (typeFilter !== 'all' && item.type !== typeFilter) return false;
+        if (searchVal) {
+          const hay = `${item.plantName} ${item.scientificName} ${item.type} ${item.note} ${item.date}`.toLowerCase();
+          if (!hay.includes(searchVal)) return false;
+        }
+        return true;
+      });
+
+      const listEl = document.getElementById('globalLogsList');
+      if (!listEl) return;
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<div class="p-6 text-center text-xs text-emerald-300/60 border border-emerald-900/40 rounded-xl">No log entries match your filter.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(item => `
+        <div class="p-3.5 rounded-xl bg-[#0b1611] border border-emerald-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-emerald-700/60 transition">
+          <div class="space-y-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs font-mono text-emerald-300/80">${escapeHtml(item.date)}</span>
+              <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-700/50">${escapeHtml(item.type)}</span>
+              <button type="button" onclick="openPlantDetailModal('${escapeHtml(item.plantId)}')" class="text-xs sm:text-sm font-bold text-white hover:text-emerald-300 underline decoration-emerald-700/60">
+                ${escapeHtml(item.plantName)}
+              </button>
+              <span class="text-xs italic text-emerald-300/60">(${escapeHtml(item.scientificName)})</span>
+            </div>
+            <p class="text-xs sm:text-sm text-emerald-100/90 leading-relaxed">${escapeHtml(item.note)}</p>
+          </div>
+          <button type="button" onclick="deletePlantLogEntry('${escapeHtml(item.plantId)}', '${escapeHtml(item.id)}')" class="self-end sm:self-center text-xs text-rose-400/70 hover:text-rose-300 px-2.5 py-1 rounded-lg hover:bg-rose-950/50">
+            Delete
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function openQuickLogModal() {
+      populatePlantSelects();
+      document.getElementById('quickLogDateInput').value = TODAY_STR;
+      document.getElementById('quickLogNoteInput').value = '';
+      document.getElementById('quickLogModal').classList.remove('hidden');
+    }
+
+    function closeQuickLogModal() {
+      document.getElementById('quickLogModal').classList.add('hidden');
+    }
+
+    function saveQuickLogModal() {
+      const plantId = document.getElementById('quickLogPlantSelect').value;
+      const type = document.getElementById('quickLogTypeSelect').value;
+      const date = document.getElementById('quickLogDateInput').value || TODAY_STR;
+      const note = document.getElementById('quickLogNoteInput').value.trim();
+
+      const plant = plantsState.find(p => p.id === plantId);
+      if (!plant) return;
+
+      if (!plant.logs) plant.logs = [];
+      plant.logs.unshift({
+        id: 'log-' + Date.now(),
+        date,
+        type,
+        note: note || `${type} logged.`
+      });
+      plant.logs.sort((a, b) => b.date.localeCompare(a.date));
+
+      if (type === 'Watering' && (!plant.lastWatered || date >= plant.lastWatered)) {
+        plant.lastWatered = date;
+      }
+
+      saveState();
+      closeQuickLogModal();
+      renderRoster();
+      renderGlobalLogs();
+      showToast(`Logged ${type} for ${plant.name}`);
+    }
+
+    // =========================================================================
+    // 10. VIEW NAVIGATION, JSON EXPORT/IMPORT & RESET
+    // =========================================================================
+    function switchMainView(view) {
+      const views = ['roster', 'logs', 'python'];
+      views.forEach(v => {
+        const sec = document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1));
+        const btn = document.getElementById('tabBtn' + v.charAt(0).toUpperCase() + v.slice(1));
+        if (sec) sec.classList.toggle('hidden', v !== view);
+        if (btn) {
+          btn.className = v === view
+            ? 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-emerald-600/25 text-emerald-200 border border-emerald-500/50 flex items-center gap-1.5 transition'
+            : 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-emerald-300/70 hover:text-white flex items-center gap-1.5 transition';
+        }
+      });
+      if (view === 'logs') {
+        populatePlantSelects();
+        renderGlobalLogs();
+      }
+    }
+
+    function exportCollectionJSON() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        seasonMode: currentSeason,
+        plants: plantsState
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `verdantlog_backup_${TODAY_STR}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('Exported collection & logs JSON backup');
+    }
+
+    function importCollectionJSON(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          const importedPlants = Array.isArray(data) ? data : data.plants;
+          if (Array.isArray(importedPlants) && importedPlants.length > 0) {
+            plantsState = importedPlants;
+            if (data.seasonMode === 'summer' || data.seasonMode === 'winter') {
+              currentSeason = data.seasonMode;
+            }
+            saveState();
+            updateSeasonHeaderUI();
+            renderRoster();
+            renderGlobalLogs();
+            populatePlantSelects();
+            showToast(`Imported ${plantsState.length} plants successfully!`);
+          } else {
+            showToast('Invalid JSON format', 'rose');
+          }
+        } catch (err) {
+          showToast('Failed to parse JSON file', 'rose');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function openResetConfirmModal() {
+      document.getElementById('resetConfirmModal').classList.remove('hidden');
+    }
+
+    function closeResetConfirmModal() {
+      document.getElementById('resetConfirmModal').classList.add('hidden');
+    }
+
+    function confirmResetCollection() {
+      plantsState = JSON.parse(JSON.stringify(DEFAULT_PLANTS));
+      currentSeason = 'winter';
+      saveState();
+      closeResetConfirmModal();
+      updateSeasonHeaderUI();
+      renderRoster();
+      renderGlobalLogs();
+      populatePlantSelects();
+      showToast('Restored default 19-plant collection');
+    }
+
+    function copyPythonCommand() {
+      const cmd = 'pip install -r requirements.txt && python app.py';
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(cmd);
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = cmd;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+        }
+        showToast('Copied Python launch command to clipboard');
+      } catch (e) {
+        showToast('Command: pip install -r requirements.txt && python app.py');
+      }
+    }
+
+    // =========================================================================
+    // 10B. ADD PLANT BY UPLOADING A PICTURE (WITH OPTIONAL AI VISION + WEB)
+    // =========================================================================
+    const GEMINI_KEY_STORAGE = 'verdantlog_gemini_key_v1';
+    let uploadedPhotoDataUrl = '';
+    let identifiedPhotoCare = null;
+
+    function openPhotoIdentifyModal() {
+      uploadedPhotoDataUrl = '';
+      identifiedPhotoCare = null;
+      document.getElementById('photoIdentifyFileInput').value = '';
+      document.getElementById('photoIdentifyHintInput').value = '';
+      document.getElementById('photoIdentifyEmptyState').classList.remove('hidden');
+      document.getElementById('photoIdentifyPreviewBox').classList.add('hidden');
+      document.getElementById('photoIdentifyStatus').textContent = 'Upload a photo to begin';
+      try {
+        const savedKey = localStorage.getItem(GEMINI_KEY_STORAGE) || '';
+        const keyInput = document.getElementById('geminiVisionKeyInput');
+        if (keyInput && savedKey) keyInput.value = savedKey;
+      } catch (e) {}
+      document.getElementById('photoIdentifyModal').classList.remove('hidden');
+    }
+
+    function closePhotoIdentifyModal() {
+      document.getElementById('photoIdentifyModal').classList.add('hidden');
+    }
+
+    function saveGeminiVisionKey() {
+      const val = (document.getElementById('geminiVisionKeyInput')?.value || '').trim();
+      try {
+        localStorage.setItem(GEMINI_KEY_STORAGE, val);
+        showToast(val ? 'Saved Gemini Vision API key locally' : 'Cleared API key');
+      } catch (e) {
+        showToast('Could not save key to browser storage', 'amber');
+      }
+    }
+
+    function resizeImageToDataUrl(file, maxDim = 900) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = function(ev) {
+          const img = new Image();
+          img.onerror = () => resolve(ev.target.result);
+          img.onload = function() {
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handlePhotoIdentifyFile(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const statusEl = document.getElementById('photoIdentifyStatus');
+      statusEl.textContent = 'Processing photo...';
+
+      try {
+        uploadedPhotoDataUrl = await resizeImageToDataUrl(file, 900);
+        document.getElementById('photoIdentifyPreviewImg').src = uploadedPhotoDataUrl;
+        document.getElementById('photoIdentifyEmptyState').classList.add('hidden');
+        document.getElementById('photoIdentifyPreviewBox').classList.remove('hidden');
+
+        // Pre-fill hint from filename if it looks like a plant name (not IMG_1234)
+        const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+        const hintEl = document.getElementById('photoIdentifyHintInput');
+        if (baseName && !/^(img|dsc|pxl|photo|image|screenshot)[\s_\-0-9]*$/i.test(baseName) && !hintEl.value) {
+          hintEl.value = baseName;
+        }
+
+        statusEl.textContent = 'Photo ready — click Identify & Auto-Fill or Continue';
+      } catch (err) {
+        statusEl.textContent = 'Failed to read image';
+        showToast('Could not read image file', 'rose');
+      }
+    }
+
+    async function identifyPlantFromUploadedPhoto() {
+      const statusEl = document.getElementById('photoIdentifyStatus');
+      const hint = (document.getElementById('photoIdentifyHintInput')?.value || '').trim();
+      let apiKey = (document.getElementById('geminiVisionKeyInput')?.value || '').trim();
+      if (!apiKey) {
+        try { apiKey = localStorage.getItem(GEMINI_KEY_STORAGE) || ''; } catch (e) {}
+      }
+
+      if (!uploadedPhotoDataUrl && !hint) {
+        showToast('Please upload a picture or enter a plant name hint first', 'amber');
+        return;
+      }
+
+      const btn = document.getElementById('btnIdentifyFromPhoto');
+      if (btn) btn.disabled = true;
+
+      // 2. Try client-side Gemini Vision API if user provided a key
+      if (uploadedPhotoDataUrl && apiKey) {
+        try {
+          statusEl.textContent = 'Identifying plant from photo with Gemini Vision...';
+          const base64Data = uploadedPhotoDataUrl.split(',')[1];
+          const mimeType = uploadedPhotoDataUrl.split(';')[0].split(':')[1] || 'image/jpeg';
+          const prompt = `Identify the plant or tree in this photo${hint ? ' (user hint: ' + hint + ')' : ''}. Return ONLY valid JSON with keys: commonName, scientificName, category (one of: "Bonsai & Trees", "Aroids & Tropicals", "Hoyas & Epiphytes", "Terrarium & Rare", "Carnivorous", "Balcony Fruit & Trees"), waterType (one of: "Tap / Filtered", "Distilled Only", "pH 5.2 Adjusted"), soilMix, sunExposure, summerWatering, summerIntervalDays (integer), winterWatering, winterIntervalDays (integer), careNotes.`;
+          const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: prompt },
+                  { inline_data: { mime_type: mimeType, data: base64Data } }
+                ]
+              }]
+            })
+          });
+          if (gRes.ok) {
+            const gJson = await gRes.json();
+            const rawText = gJson?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              identifiedPhotoCare = parsed;
+              statusEl.textContent = `Identified: ${parsed.commonName} (${parsed.scientificName})`;
+              showToast(`Identified ${parsed.commonName}!`);
+              if (btn) btn.disabled = false;
+              continuePhotoToPlantForm();
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn('Gemini Vision fallback:', err);
+        }
+      }
+
+      // 3. Fallback: Use hint + Wikipedia/iNaturalist Web Lookup if hint is provided
+      if (btn) btn.disabled = false;
+      continuePhotoToPlantForm(hint);
+    }
+
+    function continuePhotoToPlantForm(autoSearchHint = '') {
+      const photo = uploadedPhotoDataUrl;
+      const careData = identifiedPhotoCare;
+      const hint = autoSearchHint || (document.getElementById('photoIdentifyHintInput')?.value || '').trim();
+      closePhotoIdentifyModal();
+      openPlantModal();
+
+      if (photo) {
+        document.getElementById('formImageUrl').value = photo;
+      }
+
+      if (careData) {
+        document.getElementById('formCommonName').value = careData.commonName || hint || '';
+        document.getElementById('formScientificName').value = careData.scientificName || '';
+        if (careData.category) document.getElementById('formCategory').value = careData.category;
+        if (careData.waterType) document.getElementById('formWaterType').value = careData.waterType;
+        document.getElementById('formSoilMix').value = careData.soilMix || '';
+        document.getElementById('formSunExposure').value = careData.sunExposure || '';
+        document.getElementById('formSummerWatering').value = careData.summerWatering || '';
+        document.getElementById('formSummerDays').value = careData.summerIntervalDays || 5;
+        document.getElementById('formWinterWatering').value = careData.winterWatering || '';
+        document.getElementById('formWinterDays').value = careData.winterIntervalDays || 9;
+        document.getElementById('formCareNotes').value = careData.careNotes || '';
+      } else if (hint) {
+        document.getElementById('webLookupQuery').value = hint;
+        searchWebForPlant().then(() => {
+          // Keep the user's uploaded photo instead of overwriting with stock web photo
+          if (photo) {
+            document.getElementById('formImageUrl').value = photo;
+          }
+        });
+      }
+    }
+
+    // =========================================================================
+    // 11. INITIALIZE APP ON LOAD
+    // =========================================================================
+    // =========================================================================
+    // 10C. TIMED REMINDERS (.ICS ONE-TAP) & LOCAL WEATHER EVENTS (HERZLIYA)
+    // =========================================================================
+    function ensureDefaultReminders() {
+      const defaults = {
+        'delonix-regia': [{ id: 'rem-dr-1', date: '2027-05-15', title: 'Upsize training pot & check guy-wire', note: 'Late spring repot window for Royal Poinciana bonsai.' }],
+        'olea-europaea': [{ id: 'rem-oe-1', date: '2026-12-15', title: 'Inspect 45° aluminum wire for bark bite', note: 'Check trunk thickening and loosen wire if needed.' }],
+        'vaccinium-corymbosum': [{ id: 'rem-vc-1', date: '2027-01-15', title: 'Late-winter Blueberry pruning window', note: 'Sanitize shears, remove dead wood, open canopy (Jan-Feb).' }]
+      };
+      plantsState.forEach(p => {
+        if (!p.reminders && defaults[p.id]) {
+          p.reminders = defaults[p.id];
+        }
+      });
+    }
+
+    function renderUpcomingRemindersCard() {
+      const listEl = document.getElementById('upcomingRemindersList');
+      if (!listEl) return;
+      const items = [];
+      plantsState.forEach(p => {
+        (p.reminders || []).forEach(r => items.push({ plantId: p.id, plantName: p.name, ...r }));
+      });
+      items.sort((a, b) => a.date.localeCompare(b.date));
+      if (items.length === 0) {
+        listEl.innerHTML = `<p class="text-xs text-emerald-300/60 italic">No timed reminders yet—tap + Add Reminder to create a one-tap iPhone Calendar alert.</p>`;
+        return;
+      }
+      listEl.innerHTML = items.map(item => `
+        <div class="flex items-center justify-between gap-2 text-xs bg-[#0b1611] px-2.5 py-1.5 rounded-xl border border-emerald-900/50">
+          <div class="truncate">
+            <span class="font-mono text-amber-300 mr-1.5">${escapeHtml(item.date)}</span>
+            <button type="button" onclick="openPlantDetailModal('${escapeHtml(item.plantId)}')" class="font-semibold text-white hover:text-emerald-300">${escapeHtml(item.plantName)}</button>
+            <span class="text-emerald-200/75 ml-1">— ${escapeHtml(item.title)}</span>
+          </div>
+          <button type="button" onclick="downloadReminderICS('${escapeHtml(item.plantId)}', '${escapeHtml(item.id)}')" class="shrink-0 px-2 py-0.5 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white text-[11px] font-semibold">Calendar (.ics)</button>
+        </div>
+      `).join('');
+    }
+
+    function openQuickReminderModal(preselectPlantId = '') {
+      const sel = document.getElementById('reminderPlantSelect');
+      if (sel) {
+        sel.innerHTML = plantsState.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} (${escapeHtml(p.scientificName)})</option>`).join('');
+        if (preselectPlantId) sel.value = preselectPlantId;
+      }
+      document.getElementById('reminderTitleInput').value = '';
+      document.getElementById('reminderDateInput').value = TODAY_STR;
+      document.getElementById('reminderNoteInput').value = '';
+      document.getElementById('quickReminderModal').classList.remove('hidden');
+    }
+
+    function closeQuickReminderModal() {
+      document.getElementById('quickReminderModal').classList.add('hidden');
+    }
+
+    function saveQuickReminder(exportIcs = false) {
+      const plantId = document.getElementById('reminderPlantSelect').value;
+      const title = document.getElementById('reminderTitleInput').value.trim();
+      const date = document.getElementById('reminderDateInput').value || TODAY_STR;
+      const note = document.getElementById('reminderNoteInput').value.trim();
+
+      if (!title) {
+        showToast('Enter a reminder title', 'amber');
+        return;
+      }
+      const plant = plantsState.find(p => p.id === plantId);
+      if (!plant) return;
+      if (!plant.reminders) plant.reminders = [];
+      const remId = 'rem-' + Date.now();
+      plant.reminders.push({ id: remId, date, title, note });
+      plant.reminders.sort((a, b) => a.date.localeCompare(b.date));
+      saveState();
+      closeQuickReminderModal();
+      renderRoster();
+      if (currentDetailPlantId === plantId) openPlantDetailModal(plantId);
+      showToast(`Saved timed reminder for ${plant.name}`);
+      if (exportIcs) {
+        downloadReminderICS(plantId, remId);
+      }
+    }
+
+    function deletePlantReminder(plantId, remId) {
+      const plant = plantsState.find(p => p.id === plantId);
+      if (!plant || !plant.reminders) return;
+      plant.reminders = plant.reminders.filter(r => r.id !== remId);
+      saveState();
+      renderRoster();
+      if (currentDetailPlantId === plantId) openPlantDetailModal(plantId);
+      showToast('Removed timed reminder', 'amber');
+    }
+
+    function downloadReminderICS(plantId, remId) {
+      const plant = plantsState.find(p => p.id === plantId);
+      const rem = plant && (plant.reminders || []).find(r => r.id === remId);
+      if (!plant || !rem) return;
+      const dtClean = rem.date.replace(/-/g, '');
+      const icsLines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//VerdantLog//Botanical Tracker//EN',
+        'BEGIN:VEVENT',
+        `UID:${rem.id}@verdantlog.local`,
+        `DTSTAMP:${dtClean}T080000Z`,
+        `DTSTART:${dtClean}T083000`,
+        `DTEND:${dtClean}T090000`,
+        `SUMMARY:🌿 ${plant.name}: ${rem.title}`,
+        `DESCRIPTION:${(rem.note || plant.careNotes || '').replace(/\n/g, ' ')}`,
+        'BEGIN:VALARM',
+        'TRIGGER:-PT0M',
+        'ACTION:DISPLAY',
+        `DESCRIPTION:VerdantLog Plant Reminder: ${plant.name}`,
+        'END:VALARM',
+        'END:VEVENT',
+        'END:VCALENDAR'
+      ].join('\r\n');
+
+      const blob = new Blob([icsLines], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${plant.id}_reminder.ics`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('Opened iPhone Calendar event (.ics)');
+    }
+
+    async function fetchLocalWeatherEvents() {
+      const pill = document.getElementById('weatherTempPill');
+      const list = document.getElementById('weatherAlertsList');
+      if (!pill || !list) return;
+      try {
+        const url = 'https://api.open-meteo.com/v1/forecast?latitude=32.1624&longitude=34.8447&current=temperature_2m,relative_humidity_2m&daily=temperature_2m_min,temperature_2m_max,precipitation_sum&timezone=auto&forecast_days=3';
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Weather API unavailable');
+        const data = await res.json();
+        const curTemp = Math.round(data.current?.temperature_2m ?? 20);
+        const curHum = Math.round(data.current?.relative_humidity_2m ?? 60);
+        const minTemps = data.daily?.temperature_2m_min || [];
+        const maxTemps = data.daily?.temperature_2m_max || [];
+        const rainDays = data.daily?.precipitation_sum || [];
+
+        const min3d = minTemps.length ? Math.round(Math.min(...minTemps)) : curTemp;
+        const max3d = maxTemps.length ? Math.round(Math.max(...maxTemps)) : curTemp;
+        const totalRain = rainDays.reduce((a, b) => a + (b || 0), 0);
+
+        pill.textContent = `${curTemp}°C • ${curHum}% RH`;
+
+        const alerts = [];
+        if (min3d <= 12) {
+          alerts.push(`<div class="text-sky-200 font-medium">❄️ <strong>Cold Watch (${min3d}°C low):</strong> Bring <em>Delonix regia</em> indoors and keep <em>Plumeria</em> dry.</div>`);
+        }
+        if (max3d >= 31) {
+          alerts.push(`<div class="text-amber-200 font-medium">☀️ <strong>Heat Watch (${max3d}°C high):</strong> Shade Hoyas/Anthuriums from harsh midday south sun.</div>`);
+        }
+        if (totalRain >= 2) {
+          alerts.push(`<div class="text-emerald-200 font-medium">🌧️ <strong>Rain Event (${totalRain.toFixed(1)} mm forecast):</strong> Balcony pots will receive natural rain—skip manual checks on exposed trees.</div>`);
+        }
+        if (alerts.length === 0) {
+          alerts.push(`<div class="text-emerald-200/85">✅ Mild 3-day window (${min3d}°C–${max3d}°C, ${totalRain.toFixed(1)} mm rain) — safe for all balcony &amp; bonsai trees.</div>`);
+        }
+        list.innerHTML = alerts.join('');
+      } catch (err) {
+        pill.textContent = 'Offline';
+        list.innerHTML = `<div class="text-emerald-300/70">Could not reach Open-Meteo weather forecast right now.</div>`;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      ensureDefaultReminders();
+      updateSeasonHeaderUI();
+      switchMainView('roster');
+      renderRoster();
+      populatePlantSelects();
+      renderGlobalLogs();
+      fetchLocalWeatherEvents();
+    });
+  </script>
+</body>
+</html>
