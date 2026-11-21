@@ -828,14 +828,15 @@
           </div>
 
           <!-- Optional Gemini Vision API Key for Pure-Photo Recognition -->
-          <details id="photoAiKeyDetails" class="text-xs text-emerald-200/80">
-            <summary class="cursor-pointer text-teal-300/90 hover:text-teal-200 font-medium">Want AI to recognize the species from the photo alone without typing a name? (Free Gemini Key)</summary>
+          <details id="photoAiKeyDetails" class="text-xs text-emerald-200/80" open>
+            <summary class="cursor-pointer text-teal-300/90 hover:text-teal-200 font-medium">AI Photo Recognition Setup (Free Gemini API Key)</summary>
             <div class="mt-2 space-y-2 pt-2 border-t border-emerald-900/50">
-              <p class="text-[11px] text-emerald-200/70">Paste a free Gemini API key (from Google AI Studio) once. It saves only on your iPhone and identifies any plant photo automatically.</p>
+              <p class="text-[11px] text-emerald-200/70">Paste a newly created key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="underline text-teal-300">Google AI Studio</a> (supports 2026 <code class="text-teal-200">AQ...</code> Auth keys and restricted <code class="text-teal-200">AIza...</code> keys).</p>
               <div class="flex gap-2">
-                <input type="password" id="geminiVisionKeyInput" placeholder="AIza..." class="flex-1 px-3 py-1.5 rounded-lg bg-[#112119] border border-emerald-800/60 text-xs text-white focus:outline-none"/>
-                <button type="button" onclick="saveGeminiVisionKey()" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold">Save Key</button>
+                <input type="password" id="geminiVisionKeyInput" placeholder="Paste AQ... or AIza... key here" class="flex-1 px-3 py-1.5 rounded-lg bg-[#112119] border border-emerald-800/60 text-xs text-white focus:outline-none"/>
+                <button type="button" onclick="saveGeminiVisionKey()" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold shrink-0">Save &amp; Test Key</button>
               </div>
+              <div id="geminiKeyDiagBox" class="hidden p-2.5 rounded-lg bg-[#09140f] border border-emerald-800/70 text-[11px] font-mono leading-relaxed break-words"></div>
             </div>
           </details>
         </div>
@@ -2925,13 +2926,112 @@
       document.getElementById('photoIdentifyModal').classList.add('hidden');
     }
 
-    function saveGeminiVisionKey() {
+    function showKeyDiag(msg, isError = false) {
+      const box = document.getElementById('geminiKeyDiagBox');
+      if (!box) return;
+      box.classList.remove('hidden');
+      box.className = isError
+        ? 'p-2.5 rounded-lg bg-rose-950/60 border border-rose-700/70 text-rose-200 text-[11px] font-mono leading-relaxed break-words'
+        : 'p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-700/70 text-emerald-200 text-[11px] font-mono leading-relaxed break-words';
+      box.textContent = msg;
+    }
+
+    async function callGeminiWithFallback(apiKey, partsPayload) {
+      const cleanKey = apiKey.replace(/^["']|["']$/g, '').trim();
+      let candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
+
+      // 1. Dynamically discover available generateContent models for this key
+      for (const useHeader of [true, false]) {
+        try {
+          const listUrl = useHeader
+            ? 'https://generativelanguage.googleapis.com/v1beta/models'
+            : `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(cleanKey)}`;
+          const listHeaders = useHeader ? { 'x-goog-api-key': cleanKey } : {};
+          const listRes = await fetch(listUrl, { headers: listHeaders });
+          if (listRes.ok) {
+            const listData = await listRes.json();
+            const avail = (listData.models || [])
+              .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+              .map(m => m.name.replace(/^models\//, ''))
+              .filter(name => /gemini/i.test(name) && !/embedding|tts|imagen|veo|audio/i.test(name));
+            if (avail.length > 0) {
+              // Sort flash vision models first
+              avail.sort((a, b) => {
+                const aFlash = /flash/i.test(a) ? 0 : 1;
+                const bFlash = /flash/i.test(b) ? 0 : 1;
+                return aFlash - bFlash;
+              });
+              candidateModels = [...new Set([...avail, ...candidateModels])];
+            }
+            break;
+          } else {
+            const errData = await listRes.json().catch(() => ({}));
+            if (errData?.error?.message && listRes.status !== 404) {
+              return { ok: false, errorMsg: `HTTP ${listRes.status}: ${errData.error.message}` };
+            }
+          }
+        } catch (e) {}
+      }
+
+      let lastErrMsg = 'Unknown API error';
+      for (const modelName of candidateModels.slice(0, 5)) {
+        for (const useHeader of [true, false]) {
+          try {
+            const url = useHeader
+              ? `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`
+              : `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(cleanKey)}`;
+            const headers = { 'Content-Type': 'application/json' };
+            if (useHeader) headers['x-goog-api-key'] = cleanKey;
+
+            const gRes = await fetch(url, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ contents: [{ parts: partsPayload }] })
+            });
+
+            if (gRes.ok) {
+              const gJson = await gRes.json();
+              return { ok: true, model: modelName, data: gJson };
+            } else {
+              const errJson = await gRes.json().catch(() => ({}));
+              const msg = errJson?.error?.message || `HTTP ${gRes.status}`;
+              lastErrMsg = `[${modelName}] ${msg}`;
+              // If key itself is invalid/rejected (400/403 not model-not-found), stop trying other models
+              if (gRes.status === 400 || gRes.status === 401 || gRes.status === 403) {
+                if (!/model|not found|unsupported/i.test(msg)) {
+                  return { ok: false, errorMsg: lastErrMsg };
+                }
+              }
+            }
+          } catch (netErr) {
+            lastErrMsg = netErr.message || 'Network/CORS request blocked';
+          }
+        }
+      }
+      return { ok: false, errorMsg: lastErrMsg };
+    }
+
+    async function saveGeminiVisionKey() {
       const val = (document.getElementById('geminiVisionKeyInput')?.value || '').trim();
       try {
         localStorage.setItem(GEMINI_KEY_STORAGE, val);
-        showToast(val ? 'Saved Gemini Vision API key — tap Auto-Fill Care Profile!' : 'Cleared API key');
-      } catch (e) {
-        showToast('Could not save key to browser storage', 'amber');
+      } catch (e) {}
+      if (!val) {
+        showKeyDiag('API key cleared.', false);
+        showToast('Cleared API key');
+        return;
+      }
+      showKeyDiag('Testing key with Google AI Studio...', false);
+      const testRes = await callGeminiWithFallback(val, [{ text: 'Reply with OK' }]);
+      if (testRes.ok) {
+        showKeyDiag(`✓ Key verified & active! Connected to model: ${testRes.model}`, false);
+        showToast(`Key verified (${testRes.model})!`);
+        if (uploadedPhotoDataUrl) {
+          identifyPlantFromUploadedPhoto();
+        }
+      } else {
+        showKeyDiag(`✗ Google API rejected key: ${testRes.errorMsg}`, true);
+        showToast('Key test failed — check red error message in modal', 'rose');
       }
     }
 
@@ -3032,42 +3132,38 @@
 
       // 1. If Gemini API Key is present, identify species directly from image pixels
       if (uploadedPhotoDataUrl && apiKey) {
-        try {
-          statusEl.textContent = 'AI Vision analyzing plant photo...';
-          const base64Data = uploadedPhotoDataUrl.split(',')[1];
-          const mimeType = uploadedPhotoDataUrl.split(';')[0].split(':')[1] || 'image/jpeg';
-          const prompt = `Identify the plant or tree in this photo${hint ? ' (user hint: ' + hint + ')' : ''}. Return ONLY valid JSON with keys: commonName, scientificName, category (one of: "Bonsai & Trees", "Aroids & Tropicals", "Hoyas & Epiphytes", "Terrarium & Rare", "Carnivorous", "Balcony Fruit & Trees"), waterType (one of: "Tap / Filtered", "Distilled Only", "pH 5.2 Adjusted"), soilMix, sunExposure, summerWatering, summerIntervalDays (integer), winterWatering, winterIntervalDays (integer), careNotes.`;
-          const gRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{
-                parts: [
-                  { text: prompt },
-                  { inline_data: { mime_type: mimeType, data: base64Data } }
-                ]
-              }]
-            })
-          });
-          if (gRes.ok) {
-            const gJson = await gRes.json();
-            const rawText = gJson?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
+        statusEl.textContent = 'AI Vision analyzing plant photo...';
+        const base64Data = uploadedPhotoDataUrl.split(',')[1];
+        const mimeType = uploadedPhotoDataUrl.split(';')[0].split(':')[1] || 'image/jpeg';
+        const prompt = `Identify the plant or tree in this photo${hint ? ' (user hint: ' + hint + ')' : ''}. Return ONLY valid JSON with keys: commonName, scientificName, category (one of: "Bonsai & Trees", "Aroids & Tropicals", "Hoyas & Epiphytes", "Terrarium & Rare", "Carnivorous", "Balcony Fruit & Trees"), waterType (one of: "Tap / Filtered", "Distilled Only", "pH 5.2 Adjusted"), soilMix, sunExposure, summerWatering, summerIntervalDays (integer), winterWatering, winterIntervalDays (integer), careNotes.`;
+        const gOut = await callGeminiWithFallback(apiKey, [
+          { text: prompt },
+          { inline_data: { mime_type: mimeType, data: base64Data } }
+        ]);
+        if (gOut.ok) {
+          const rawText = gOut.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            try {
               const parsed = JSON.parse(jsonMatch[0]);
               identifiedPhotoCare = parsed;
               document.getElementById('photoIdentifyHintInput').value = parsed.commonName || hint;
-              statusEl.textContent = `✓ AI Identified: ${parsed.commonName}`;
+              statusEl.textContent = `✓ AI Identified (${gOut.model}): ${parsed.commonName}`;
+              showKeyDiag(`✓ Identified using ${gOut.model}`, false);
               renderPhotoCarePreview(identifiedPhotoCare);
               showToast(`Identified ${parsed.commonName}! Tap "+ Add Plant to Library" to save.`);
               if (btn) btn.disabled = false;
               return;
-            }
-          } else {
-            showToast('Gemini API key error — falling back to name lookup', 'amber');
+            } catch (parseErr) {}
           }
-        } catch (err) {
-          console.warn('Gemini Vision error:', err);
+        } else {
+          statusEl.textContent = 'Gemini API Error — see details below';
+          showKeyDiag(`✗ Google API Error: ${gOut.errorMsg}`, true);
+          showToast(`Gemini Error: ${gOut.errorMsg.slice(0, 70)}`, 'rose');
+          if (!hint) {
+            if (btn) btn.disabled = false;
+            return;
+          }
         }
       }
 
