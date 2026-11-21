@@ -770,9 +770,9 @@
         <div>
           <h2 class="text-lg font-bold text-white flex items-center gap-2">
             <svg class="w-5 h-5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span>Add Plant by Uploading a Picture</span>
+            <span>Add Plant by Photo</span>
           </h2>
-          <p class="text-xs text-emerald-300/70">Snap or upload a photo—auto-identify with AI Vision (if configured) or pair with a name to auto-fill care.</p>
+          <p class="text-xs text-emerald-300/70">1. Snap/upload a picture → 2. Enter plant name (or use AI Vision) → 3. Save directly to your library.</p>
         </div>
         <button type="button" onclick="closePhotoIdentifyModal()" aria-label="Close photo upload modal" class="p-1.5 rounded-xl bg-[#162d22] hover:bg-rose-950 text-emerald-200">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
@@ -780,41 +780,58 @@
       </div>
 
       <div class="p-5 overflow-y-auto custom-scroll space-y-4 flex-1">
-        <!-- Upload / Camera Dropzone -->
-        <label id="photoDropZone" class="block rounded-2xl border-2 border-dashed border-teal-700/60 hover:border-teal-400 bg-[#0b1611] p-5 text-center cursor-pointer transition">
+        <!-- Step 1: Upload / Camera Dropzone -->
+        <label id="photoDropZone" class="block rounded-2xl border-2 border-dashed border-teal-700/60 hover:border-teal-400 bg-[#0b1611] p-4 text-center cursor-pointer transition">
           <input type="file" id="photoIdentifyFileInput" accept="image/*" onchange="handlePhotoIdentifyFile(event)" class="hidden"/>
-          <div id="photoIdentifyEmptyState" class="space-y-2 py-4">
+          <div id="photoIdentifyEmptyState" class="space-y-2 py-3">
             <div class="w-12 h-12 mx-auto rounded-2xl bg-teal-950 border border-teal-700/60 flex items-center justify-center text-teal-300">
               <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
             </div>
-            <p class="text-sm font-semibold text-white">Tap to Take a Photo or Choose an Image</p>
-            <p class="text-xs text-emerald-300/70">Works with iPhone Camera, Photo Library, or PC image files</p>
+            <p class="text-sm font-semibold text-white">Step 1: Tap to Take a Photo or Choose from Library</p>
+            <p class="text-xs text-emerald-300/70">Automatically resizes &amp; compresses for iPhone storage</p>
           </div>
           <div id="photoIdentifyPreviewBox" class="hidden space-y-2">
-            <img id="photoIdentifyPreviewImg" src="" alt="Uploaded plant preview" class="max-h-56 mx-auto rounded-xl object-contain border border-emerald-800/60"/>
-            <p class="text-xs text-teal-300">Tap to change photo</p>
+            <img id="photoIdentifyPreviewImg" src="" alt="Uploaded plant preview" class="max-h-48 mx-auto rounded-xl object-contain border border-emerald-800/60"/>
+            <p class="text-xs text-teal-300 font-medium">✓ Photo loaded — tap here anytime to pick a different photo</p>
           </div>
         </label>
 
-        <!-- Optional Plant Name / AI Identification Controls -->
+        <!-- Step 2: Plant Name or AI Vision Auto-ID -->
         <div class="p-4 rounded-2xl bg-[#0b1611] border border-emerald-900/60 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="text-xs font-semibold text-emerald-200">Identify Species &amp; Care Profile</span>
-            <span id="photoIdentifyStatus" class="text-[11px] text-emerald-300/80">Upload a photo to begin</span>
+            <span class="text-xs font-semibold text-emerald-200">Step 2: Name Your Plant (or Auto-ID with AI Key)</span>
+            <span id="photoIdentifyStatus" class="text-[11px] font-medium text-teal-300">Waiting for photo...</span>
           </div>
 
           <div class="flex flex-col sm:flex-row gap-2">
-            <input type="text" id="photoIdentifyHintInput" placeholder="Optional name hint (e.g. Monstera, Ficus, Sarracenia)..." class="flex-1 px-3.5 py-2 rounded-xl bg-[#112119] border border-emerald-800/60 text-xs sm:text-sm text-white placeholder-emerald-300/40 focus:outline-none focus:border-teal-400"/>
+            <input type="text" id="photoIdentifyHintInput" onkeydown="if(event.key==='Enter'){event.preventDefault();identifyPlantFromUploadedPhoto();}" placeholder="Type plant name (e.g. Monstera, Ficus, Olive, Hoya)..." class="flex-1 px-3.5 py-2 rounded-xl bg-[#112119] border border-emerald-800/60 text-xs sm:text-sm text-white placeholder-emerald-300/40 focus:outline-none focus:border-teal-400"/>
             <button type="button" id="btnIdentifyFromPhoto" onclick="identifyPlantFromUploadedPhoto()" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-semibold shrink-0 transition">
-              Identify &amp; Auto-Fill
+              Auto-Fill Care Profile
             </button>
           </div>
 
-          <!-- Optional Gemini Vision API Key for Automatic Photo ID -->
-          <details class="text-xs text-emerald-200/80">
-            <summary class="cursor-pointer text-teal-300/90 hover:text-teal-200 font-medium">Optional: Enable Automatic AI Photo Identification (Gemini API Key)</summary>
+          <!-- Live Auto-Filled Care Preview inside Photo Modal -->
+          <div id="photoCarePreviewCard" class="hidden p-3.5 rounded-xl bg-[#112119] border border-teal-700/50 space-y-2 text-xs">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <span id="photoPreviewName" class="font-bold text-white text-sm"></span>
+                <span id="photoPreviewSci" class="italic text-emerald-300/80 ml-1.5"></span>
+              </div>
+              <span id="photoPreviewCat" class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/50 text-[11px]"></span>
+            </div>
+            <div><span class="text-amber-300 font-semibold">Soil Mix:</span> <span id="photoPreviewSoil" class="text-emerald-100/90"></span></div>
+            <div><span class="text-yellow-300 font-semibold">Sun:</span> <span id="photoPreviewSun" class="text-emerald-100/90"></span></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-emerald-900/50">
+              <div><span class="text-amber-300 font-semibold">Summer:</span> <span id="photoPreviewSummer" class="text-emerald-100/85"></span></div>
+              <div><span class="text-sky-300 font-semibold">Winter:</span> <span id="photoPreviewWinter" class="text-emerald-100/85"></span></div>
+            </div>
+          </div>
+
+          <!-- Optional Gemini Vision API Key for Pure-Photo Recognition -->
+          <details id="photoAiKeyDetails" class="text-xs text-emerald-200/80">
+            <summary class="cursor-pointer text-teal-300/90 hover:text-teal-200 font-medium">Want AI to recognize the species from the photo alone without typing a name? (Free Gemini Key)</summary>
             <div class="mt-2 space-y-2 pt-2 border-t border-emerald-900/50">
-              <p class="text-[11px] text-emerald-200/70">Paste a Gemini API key (saved locally in your browser) to automatically identify any plant directly from its photo without typing a name.</p>
+              <p class="text-[11px] text-emerald-200/70">Paste a free Gemini API key (from Google AI Studio) once. It saves only on your iPhone and identifies any plant photo automatically.</p>
               <div class="flex gap-2">
                 <input type="password" id="geminiVisionKeyInput" placeholder="AIza..." class="flex-1 px-3 py-1.5 rounded-lg bg-[#112119] border border-emerald-800/60 text-xs text-white focus:outline-none"/>
                 <button type="button" onclick="saveGeminiVisionKey()" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold">Save Key</button>
@@ -824,11 +841,16 @@
         </div>
       </div>
 
-      <div class="px-5 py-3.5 border-t border-emerald-900/60 bg-[#0b1611] flex items-center justify-between gap-2">
-        <button type="button" onclick="closePhotoIdentifyModal()" class="px-4 py-2 rounded-xl bg-[#162d22] text-emerald-200 text-xs font-medium">Cancel</button>
-        <button type="button" onclick="continuePhotoToPlantForm()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold shadow-lg">
-          Continue to Plant Care Form →
-        </button>
+      <div class="px-5 py-3.5 border-t border-emerald-900/60 bg-[#0b1611] flex flex-wrap items-center justify-between gap-2">
+        <button type="button" onclick="closePhotoIdentifyModal()" class="px-3.5 py-2 rounded-xl bg-[#162d22] text-emerald-200 text-xs font-medium">Cancel</button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="continuePhotoToPlantForm()" class="px-3.5 py-2 rounded-xl bg-[#162d22] hover:bg-[#1e3d2e] text-emerald-200 border border-emerald-700/50 text-xs font-medium">
+            Customize Fields...
+          </button>
+          <button type="button" onclick="savePlantDirectlyFromPhotoModal()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold shadow-lg">
+            + Add Plant to Library
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -2548,10 +2570,17 @@
       const file = event.target.files && event.target.files[0];
       if (!file) return;
       try {
-        const resizedDataUrl = await resizeImageToDataUrl(file, 900);
+        const resizedDataUrl = await resizeImageToDataUrl(file, 720);
         const existingId = document.getElementById('formPlantId').value || ('plant-' + Date.now());
-        document.getElementById('formImageUrl').value = await persistPlantPhoto(existingId, resizedDataUrl);
-        showToast('Photo saved and attached to form');
+        const savedUrl = await persistPlantPhoto(existingId, resizedDataUrl);
+        if (savedUrl.startsWith('data:image/')) {
+          pendingFormImageDataUrl = savedUrl;
+          document.getElementById('formImageUrl').value = '[Uploaded Photo Attached]';
+        } else {
+          pendingFormImageDataUrl = '';
+          document.getElementById('formImageUrl').value = savedUrl;
+        }
+        showToast('Photo attached to form');
       } catch (err) {
         showToast('Failed to process photo', 'rose');
       }
@@ -2569,7 +2598,8 @@
       const category = document.getElementById('formCategory').value;
       const location = document.getElementById('formLocation').value.trim() || 'Indoor / Balcony';
       const waterType = document.getElementById('formWaterType').value;
-      const imageUrl = document.getElementById('formImageUrl').value.trim();
+      const rawImgVal = document.getElementById('formImageUrl').value.trim();
+      const imageUrl = (rawImgVal === '[Uploaded Photo Attached]' && pendingFormImageDataUrl) ? pendingFormImageDataUrl : rawImgVal;
       const soilMix = document.getElementById('formSoilMix').value.trim() || 'Well-draining aroid/container mix (perlite, bark, coco coir).';
       const sunExposure = document.getElementById('formSunExposure').value.trim() || 'Bright indirect light.';
       const summerWatering = document.getElementById('formSummerWatering').value.trim() || 'Every 4–5 days when top soil dries.';
@@ -2867,11 +2897,12 @@
     }
 
     // =========================================================================
-    // 10B. ADD PLANT BY UPLOADING A PICTURE (WITH OPTIONAL AI VISION + WEB)
+    // 10B. ADD PLANT BY UPLOADING A PICTURE (DIRECT SAVE + AI VISION + WEB)
     // =========================================================================
     const GEMINI_KEY_STORAGE = 'verdantlog_gemini_key_v1';
     let uploadedPhotoDataUrl = '';
     let identifiedPhotoCare = null;
+    let pendingFormImageDataUrl = '';
 
     function openPhotoIdentifyModal() {
       uploadedPhotoDataUrl = '';
@@ -2880,7 +2911,8 @@
       document.getElementById('photoIdentifyHintInput').value = '';
       document.getElementById('photoIdentifyEmptyState').classList.remove('hidden');
       document.getElementById('photoIdentifyPreviewBox').classList.add('hidden');
-      document.getElementById('photoIdentifyStatus').textContent = 'Upload a photo to begin';
+      document.getElementById('photoCarePreviewCard').classList.add('hidden');
+      document.getElementById('photoIdentifyStatus').textContent = 'Step 1: Upload or snap a photo';
       try {
         const savedKey = localStorage.getItem(GEMINI_KEY_STORAGE) || '';
         const keyInput = document.getElementById('geminiVisionKeyInput');
@@ -2897,13 +2929,13 @@
       const val = (document.getElementById('geminiVisionKeyInput')?.value || '').trim();
       try {
         localStorage.setItem(GEMINI_KEY_STORAGE, val);
-        showToast(val ? 'Saved Gemini Vision API key locally' : 'Cleared API key');
+        showToast(val ? 'Saved Gemini Vision API key — tap Auto-Fill Care Profile!' : 'Cleared API key');
       } catch (e) {
         showToast('Could not save key to browser storage', 'amber');
       }
     }
 
-    function resizeImageToDataUrl(file, maxDim = 900) {
+    function resizeImageToDataUrl(file, maxDim = 720) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onerror = reject;
@@ -2927,7 +2959,7 @@
             canvas.height = h;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, w, h);
-            resolve(canvas.toDataURL('image/jpeg', 0.85));
+            resolve(canvas.toDataURL('image/jpeg', 0.78));
           };
           img.src = ev.target.result;
         };
@@ -2935,26 +2967,47 @@
       });
     }
 
+    function renderPhotoCarePreview(careObj) {
+      if (!careObj) return;
+      document.getElementById('photoPreviewName').textContent = careObj.commonName || 'New Plant';
+      document.getElementById('photoPreviewSci').textContent = careObj.scientificName ? `(${careObj.scientificName})` : '';
+      document.getElementById('photoPreviewCat').textContent = careObj.category || 'Aroids & Tropicals';
+      document.getElementById('photoPreviewSoil').textContent = careObj.soilMix || '';
+      document.getElementById('photoPreviewSun').textContent = careObj.sunExposure || '';
+      document.getElementById('photoPreviewSummer').textContent = careObj.summerWatering || '';
+      document.getElementById('photoPreviewWinter').textContent = careObj.winterWatering || '';
+      document.getElementById('photoCarePreviewCard').classList.remove('hidden');
+    }
+
     async function handlePhotoIdentifyFile(event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
       const statusEl = document.getElementById('photoIdentifyStatus');
-      statusEl.textContent = 'Processing photo...';
+      statusEl.textContent = 'Compressing photo...';
 
       try {
-        uploadedPhotoDataUrl = await resizeImageToDataUrl(file, 900);
+        uploadedPhotoDataUrl = await resizeImageToDataUrl(file, 720);
         document.getElementById('photoIdentifyPreviewImg').src = uploadedPhotoDataUrl;
         document.getElementById('photoIdentifyEmptyState').classList.add('hidden');
         document.getElementById('photoIdentifyPreviewBox').classList.remove('hidden');
 
-        // Pre-fill hint from filename if it looks like a plant name (not IMG_1234)
         const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
         const hintEl = document.getElementById('photoIdentifyHintInput');
-        if (baseName && !/^(img|dsc|pxl|photo|image|screenshot)[\s_\-0-9]*$/i.test(baseName) && !hintEl.value) {
+        if (baseName && !/^(img|dsc|pxl|photo|image|screenshot|fullsizerender)[\s_\-0-9]*$/i.test(baseName) && !hintEl.value) {
           hintEl.value = baseName;
         }
 
-        statusEl.textContent = 'Photo ready — click Identify & Auto-Fill or Continue';
+        let apiKey = (document.getElementById('geminiVisionKeyInput')?.value || '').trim();
+        if (!apiKey) {
+          try { apiKey = localStorage.getItem(GEMINI_KEY_STORAGE) || ''; } catch (e) {}
+        }
+
+        if (apiKey || hintEl.value.trim()) {
+          await identifyPlantFromUploadedPhoto();
+        } else {
+          statusEl.textContent = 'Photo ready! Type the plant name below & tap Auto-Fill Care Profile';
+          hintEl.focus();
+        }
       } catch (err) {
         statusEl.textContent = 'Failed to read image';
         showToast('Could not read image file', 'rose');
@@ -2970,17 +3023,17 @@
       }
 
       if (!uploadedPhotoDataUrl && !hint) {
-        showToast('Please upload a picture or enter a plant name hint first', 'amber');
+        showToast('Upload a picture or type a plant name first', 'amber');
         return;
       }
 
       const btn = document.getElementById('btnIdentifyFromPhoto');
       if (btn) btn.disabled = true;
 
-      // 2. Try client-side Gemini Vision API if user provided a key
+      // 1. If Gemini API Key is present, identify species directly from image pixels
       if (uploadedPhotoDataUrl && apiKey) {
         try {
-          statusEl.textContent = 'Identifying plant from photo with Gemini Vision...';
+          statusEl.textContent = 'AI Vision analyzing plant photo...';
           const base64Data = uploadedPhotoDataUrl.split(',')[1];
           const mimeType = uploadedPhotoDataUrl.split(';')[0].split(':')[1] || 'image/jpeg';
           const prompt = `Identify the plant or tree in this photo${hint ? ' (user hint: ' + hint + ')' : ''}. Return ONLY valid JSON with keys: commonName, scientificName, category (one of: "Bonsai & Trees", "Aroids & Tropicals", "Hoyas & Epiphytes", "Terrarium & Rare", "Carnivorous", "Balcony Fruit & Trees"), waterType (one of: "Tap / Filtered", "Distilled Only", "pH 5.2 Adjusted"), soilMix, sunExposure, summerWatering, summerIntervalDays (integer), winterWatering, winterIntervalDays (integer), careNotes.`;
@@ -3003,38 +3056,170 @@
             if (jsonMatch) {
               const parsed = JSON.parse(jsonMatch[0]);
               identifiedPhotoCare = parsed;
-              statusEl.textContent = `Identified: ${parsed.commonName} (${parsed.scientificName})`;
-              showToast(`Identified ${parsed.commonName}!`);
+              document.getElementById('photoIdentifyHintInput').value = parsed.commonName || hint;
+              statusEl.textContent = `✓ AI Identified: ${parsed.commonName}`;
+              renderPhotoCarePreview(identifiedPhotoCare);
+              showToast(`Identified ${parsed.commonName}! Tap "+ Add Plant to Library" to save.`);
               if (btn) btn.disabled = false;
-              continuePhotoToPlantForm();
               return;
             }
+          } else {
+            showToast('Gemini API key error — falling back to name lookup', 'amber');
           }
         } catch (err) {
-          console.warn('Gemini Vision fallback:', err);
+          console.warn('Gemini Vision error:', err);
         }
       }
 
-      // 3. Fallback: Use hint + Wikipedia/iNaturalist Web Lookup if hint is provided
+      // 2. If user typed a plant name hint, look up Wikipedia + iNaturalist + Botanical Care Engine
+      if (hint) {
+        statusEl.textContent = `Fetching care profile for "${hint}"...`;
+        let sciName = hint;
+        let comName = hint;
+        let summary = '';
+        let wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(hint)}`;
+
+        try {
+          const inatRes = await fetch(`https://api.inaturalist.org/v1/taxa?q=${encodeURIComponent(hint)}&per_page=1`);
+          if (inatRes.ok) {
+            const inatData = await inatRes.json();
+            const hit = inatData?.results?.[0];
+            if (hit) {
+              sciName = hit.name || hint;
+              comName = hit.preferred_common_name
+                ? hit.preferred_common_name.replace(/\b\w/g, c => c.toUpperCase())
+                : sciName;
+              summary = hit.wikipedia_summary ? hit.wikipedia_summary.replace(/<[^>]+>/g, '') : '';
+              wikiUrl = hit.wikipedia_url || wikiUrl;
+            }
+          }
+        } catch (e) {}
+
+        const care = synthesizeBotanicalCare(comName, sciName, summary);
+        identifiedPhotoCare = {
+          commonName: comName,
+          scientificName: sciName,
+          category: care.category,
+          location: care.location,
+          waterType: care.waterType,
+          soilMix: care.soilMix,
+          sunExposure: care.sunExposure,
+          summerWatering: care.summerWatering,
+          summerIntervalDays: care.summerDays,
+          winterWatering: care.winterWatering,
+          winterIntervalDays: care.winterDays,
+          careNotes: summary ? summary.slice(0, 220) : `Added with custom photo.`,
+          wikiUrl
+        };
+        statusEl.textContent = `✓ Matched: ${comName} (${sciName})`;
+        renderPhotoCarePreview(identifiedPhotoCare);
+        showToast(`Loaded care for ${comName} — tap "+ Add Plant to Library"`);
+        if (btn) btn.disabled = false;
+        return;
+      }
+
+      // 3. Neither API key nor plant name hint was provided
       if (btn) btn.disabled = false;
-      continuePhotoToPlantForm(hint);
+      statusEl.textContent = 'Type the plant name below (or expand AI Key section)';
+      const detailsEl = document.getElementById('photoAiKeyDetails');
+      if (detailsEl) detailsEl.open = true;
+      showToast('Type the plant name in Step 2 (or paste a free Gemini key for pure-photo AI ID)', 'amber');
     }
 
-    function continuePhotoToPlantForm(autoSearchHint = '') {
+    async function savePlantDirectlyFromPhotoModal() {
+      const hint = (document.getElementById('photoIdentifyHintInput')?.value || '').trim();
+      if (!uploadedPhotoDataUrl && !hint && !identifiedPhotoCare) {
+        showToast('Please select a photo first', 'amber');
+        return;
+      }
+
+      // If user typed a name but didn't click Auto-Fill yet, auto-fill now
+      if (!identifiedPhotoCare && hint) {
+        await identifyPlantFromUploadedPhoto();
+      }
+
+      const name = (identifiedPhotoCare && identifiedPhotoCare.commonName) || hint || 'New Plant (Photo)';
+      const scientificName = (identifiedPhotoCare && identifiedPhotoCare.scientificName) || name;
+      const fallbackCare = synthesizeBotanicalCare(name, scientificName, '');
+      const care = identifiedPhotoCare || {
+        category: fallbackCare.category,
+        location: fallbackCare.location,
+        waterType: fallbackCare.waterType,
+        soilMix: fallbackCare.soilMix,
+        sunExposure: fallbackCare.sunExposure,
+        summerWatering: fallbackCare.summerWatering,
+        summerIntervalDays: fallbackCare.summerDays,
+        winterWatering: fallbackCare.winterWatering,
+        winterIntervalDays: fallbackCare.winterDays,
+        careNotes: 'Added via photo upload.',
+        wikiUrl: `https://en.wikipedia.org/wiki/${encodeURIComponent(scientificName)}`
+      };
+
+      const newPlantId = 'plant-' + Date.now();
+      const persistedUrl = uploadedPhotoDataUrl
+        ? await persistPlantPhoto(newPlantId, uploadedPhotoDataUrl)
+        : '';
+
+      const newPlant = {
+        id: newPlantId,
+        name,
+        scientificName,
+        category: care.category || 'Aroids & Tropicals',
+        location: care.location || 'Indoor / Balcony',
+        waterType: care.waterType || 'Tap / Filtered',
+        imageUrl: persistedUrl,
+        soilMix: care.soilMix || fallbackCare.soilMix,
+        sunExposure: care.sunExposure || fallbackCare.sunExposure,
+        summerWatering: care.summerWatering || fallbackCare.summerWatering,
+        summerIntervalDays: Number(care.summerIntervalDays) || 5,
+        winterWatering: care.winterWatering || fallbackCare.winterWatering,
+        winterIntervalDays: Number(care.winterIntervalDays) || 9,
+        careNotes: care.careNotes || 'Added via photo upload.',
+        wikiUrl: care.wikiUrl || `https://en.wikipedia.org/wiki/${encodeURIComponent(scientificName)}`,
+        svgTheme: 'clarinervium',
+        lastWatered: TODAY_STR,
+        reminders: [],
+        logs: [
+          {
+            id: 'log-' + Date.now(),
+            date: TODAY_STR,
+            type: 'Note / Diagnosis',
+            note: `Added ${name} to collection via photo upload.`,
+            photoUrl: persistedUrl
+          }
+        ]
+      };
+
+      plantsState.unshift(newPlant);
+      saveState();
+      closePhotoIdentifyModal();
+      selectedCategory = 'All';
+      renderRoster();
+      renderGlobalLogs();
+      populatePlantSelects();
+      showToast(`Added ${name} to your collection!`);
+    }
+
+    async function continuePhotoToPlantForm() {
+      const hint = (document.getElementById('photoIdentifyHintInput')?.value || '').trim();
+      if (!identifiedPhotoCare && hint) {
+        await identifyPlantFromUploadedPhoto();
+      }
       const photo = uploadedPhotoDataUrl;
       const careData = identifiedPhotoCare;
-      const hint = autoSearchHint || (document.getElementById('photoIdentifyHintInput')?.value || '').trim();
       closePhotoIdentifyModal();
       openPlantModal();
 
       if (photo) {
-        document.getElementById('formImageUrl').value = photo;
+        pendingFormImageDataUrl = photo;
+        document.getElementById('formImageUrl').value = '[Uploaded Photo Attached]';
       }
 
       if (careData) {
         document.getElementById('formCommonName').value = careData.commonName || hint || '';
         document.getElementById('formScientificName').value = careData.scientificName || '';
         if (careData.category) document.getElementById('formCategory').value = careData.category;
+        if (careData.location) document.getElementById('formLocation').value = careData.location;
         if (careData.waterType) document.getElementById('formWaterType').value = careData.waterType;
         document.getElementById('formSoilMix').value = careData.soilMix || '';
         document.getElementById('formSunExposure').value = careData.sunExposure || '';
@@ -3044,19 +3229,10 @@
         document.getElementById('formWinterDays').value = careData.winterIntervalDays || 9;
         document.getElementById('formCareNotes').value = careData.careNotes || '';
       } else if (hint) {
-        document.getElementById('webLookupQuery').value = hint;
-        searchWebForPlant().then(() => {
-          // Keep the user's uploaded photo instead of overwriting with stock web photo
-          if (photo) {
-            document.getElementById('formImageUrl').value = photo;
-          }
-        });
+        document.getElementById('formCommonName').value = hint;
       }
     }
 
-    // =========================================================================
-    // 11. INITIALIZE APP ON LOAD
-    // =========================================================================
     // =========================================================================
     // 10C. TIMED REMINDERS (.ICS ONE-TAP) & LOCAL WEATHER EVENTS (HERZLIYA)
     // =========================================================================
