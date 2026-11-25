@@ -130,18 +130,27 @@
 
     <!-- Navigation Tabs & Seasonal Alert Banner -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-2 border-t border-emerald-950/80 pt-2 pb-2">
-      <nav class="flex items-center gap-1" aria-label="Main Views">
-        <button type="button" id="tabBtnRoster" onclick="switchMainView('roster')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
+      <nav class="hidden sm:flex items-center gap-1 overflow-x-auto custom-scroll pb-1 sm:pb-0" aria-label="Main Views">
+        <button type="button" id="tabBtnRoster" onclick="switchMainView('roster')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition flex items-center gap-1.5">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
           <span>Plant Roster</span>
-          <span id="rosterCountBadge" class="ml-1 px-1.5 py-0.2 rounded-full text-[11px] bg-emerald-900/80 text-emerald-200">19</span>
+          <span id="rosterCountBadge" class="ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] bg-emerald-900/80 text-emerald-200">19</span>
         </button>
-        <button type="button" id="tabBtnLogs" onclick="switchMainView('logs')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
+        <button type="button" id="tabBtnSearch" onclick="switchMainView('search')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span>Search &amp; Overview</span>
+        </button>
+        <button type="button" id="tabBtnReminders" onclick="switchMainView('reminders')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span>Timed Reminders</span>
+          <span id="remindersCountBadge" class="ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] bg-amber-900/80 text-amber-200">3</span>
+        </button>
+        <button type="button" id="tabBtnLogs" onclick="switchMainView('logs')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition flex items-center gap-1.5">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
           <span>Global Event Log</span>
-          <span id="logCountBadge" class="ml-1 px-1.5 py-0.2 rounded-full text-[11px] bg-emerald-900/80 text-emerald-200">0</span>
+          <span id="logCountBadge" class="ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] bg-emerald-900/80 text-emerald-200">0</span>
         </button>
-        <button type="button" id="tabBtnPython" onclick="switchMainView('python')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
+        <button type="button" id="tabBtnPython" onclick="switchMainView('python')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition flex items-center gap-1.5">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           <span>Local Python Server &amp; Backup</span>
         </button>
@@ -156,10 +165,48 @@
   </header>
 
   <!-- Main Content Container -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-5">
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4 pb-24 sm:py-5">
 
-    <!-- ==================== VIEW 1: PLANT ROSTER ==================== -->
-    <section id="viewRoster" class="space-y-5">
+    <!-- ==================== VIEW 1: PLANT ROSTER (COMPACT GALLERY) ==================== -->
+    <section id="viewRoster" class="space-y-4">
+      <!-- Local Weather Events Banner (Herzliya) + Water Dot Legend + Active Filter Pill -->
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2">
+        <div id="weatherEventsCard" class="flex-1 bg-[#112119] border border-emerald-900/60 rounded-2xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0"></span>
+            <span class="text-xs font-bold text-white shrink-0">Herzliya Weather:</span>
+            <div id="weatherAlertsList" class="text-xs text-emerald-100/85 truncate">
+              Checking 3-day forecast...
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span id="weatherTempPill" class="text-xs font-mono px-2 py-0.5 rounded-lg bg-[#0b1611] text-sky-200 border border-sky-800/50">...</span>
+            <button type="button" onclick="fetchLocalWeatherEvents()" class="text-[11px] px-2 py-0.5 rounded-lg bg-[#162d22] hover:bg-[#1e3d2e] text-emerald-200 border border-emerald-800/50">Refresh</button>
+          </div>
+        </div>
+
+        <div id="activeFilterNotice" class="hidden bg-emerald-950/80 border border-emerald-700/60 rounded-2xl px-3.5 py-2 flex items-center justify-between gap-2 text-xs text-emerald-200">
+          <span id="activeFilterText">Filtered view active</span>
+          <button type="button" onclick="clearAllRosterFilters()" class="px-2 py-0.5 rounded bg-emerald-800 hover:bg-emerald-700 text-white font-semibold">Reset</button>
+        </div>
+      </div>
+
+      <!-- Compact Plant Cards Grid (2 cols on mobile, 3 on sm, 4 on md, 5 on lg) -->
+      <div id="plantsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+
+      <!-- Water Protocol Dot Legend (Bottom of Roster Page) -->
+      <div class="pt-2 flex justify-center">
+        <div class="bg-[#112119]/90 border border-emerald-900/50 rounded-2xl px-4 py-2 inline-flex flex-wrap items-center justify-center gap-4 text-[11px] text-emerald-200/80">
+          <span class="text-emerald-400/70 font-medium">Water Protocol Key:</span>
+          <span class="flex items-center gap-1.5" title="Distilled / RO Water Only"><span class="w-2.5 h-2.5 rounded-full bg-sky-400 inline-block shadow-sm shadow-sky-400/50"></span>Distilled Only</span>
+          <span class="flex items-center gap-1.5" title="pH 5.2 Vinegar-Adjusted Water"><span class="w-2.5 h-2.5 rounded-full bg-purple-400 inline-block shadow-sm shadow-purple-400/50"></span>pH 5.2 Adjusted</span>
+          <span class="flex items-center gap-1.5" title="Standard Tap / Filtered Water"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shadow-sm shadow-emerald-400/50"></span>Tap / Filtered</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 1B: SEARCH, FILTERS & COLLECTION OVERVIEW TAB ==================== -->
+    <section id="viewSearch" class="hidden space-y-5">
       <!-- KPI Summary Strip -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="bg-[#112119] border border-emerald-900/50 rounded-2xl p-3.5 flex items-center justify-between">
@@ -173,10 +220,10 @@
           </div>
         </div>
 
-        <div class="bg-[#112119] border border-emerald-900/50 rounded-2xl p-3.5 flex items-center justify-between">
+        <div class="bg-[#112119] border border-emerald-900/50 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-amber-600/60 transition" onclick="switchMainView('reminders')">
           <div>
             <p class="text-xs text-amber-300/80 font-medium">Timed Reminders</p>
-            <p id="kpiDueReminders" class="text-2xl font-bold text-amber-300 mt-0.5">0</p>
+            <p id="kpiDueReminders" class="text-2xl font-bold text-amber-300 mt-0.5">3</p>
             <p id="kpiSeasonSub" class="text-[11px] text-amber-200/60 mt-0.5">Pruning, wire &amp; repot tasks</p>
           </div>
           <div class="w-10 h-10 rounded-xl bg-amber-950/60 border border-amber-700/40 flex items-center justify-center text-amber-400">
@@ -195,7 +242,7 @@
           </div>
         </div>
 
-        <div class="bg-[#112119] border border-emerald-900/50 rounded-2xl p-3.5 flex items-center justify-between">
+        <div class="bg-[#112119] border border-emerald-900/50 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-purple-600/60 transition" onclick="switchMainView('logs')">
           <div>
             <p class="text-xs text-purple-300/80 font-medium">Logged Care Events</p>
             <p id="kpiTotalLogs" class="text-2xl font-bold text-purple-200 mt-0.5">0</p>
@@ -208,9 +255,18 @@
       </div>
 
       <!-- Search, Category Pills & Water Filter Bar -->
-      <div class="bg-[#112119] border border-emerald-900/60 rounded-2xl p-3.5 space-y-3">
+      <div class="bg-[#112119] border border-emerald-900/60 rounded-2xl p-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-bold text-white">Search &amp; Filter Your Plant Roster</h2>
+            <p class="text-xs text-emerald-300/70">Filter by species, substrate mix, water type, or botanical group, then jump straight to the matching plants.</p>
+          </div>
+          <button type="button" onclick="switchMainView('roster')" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">
+            View Matching Plants →
+          </button>
+        </div>
+
         <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <!-- Search Input -->
           <div class="relative flex-1">
             <svg class="w-4 h-4 text-emerald-400/70 absolute left-3.5 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
@@ -218,7 +274,6 @@
             <input type="text" id="rosterSearchInput" oninput="renderRoster()" placeholder="Search plants by name, scientific name, soil mix (e.g. Deshanit, perlite), or log notes..." class="w-full pl-10 pr-4 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-sm text-white placeholder-emerald-300/40 focus:outline-none focus:border-emerald-500"/>
           </div>
 
-          <!-- Secondary Filters -->
           <div class="flex flex-wrap items-center gap-2">
             <select id="waterTypeFilter" onchange="renderRoster()" aria-label="Filter by Water Type" class="px-3 py-2 rounded-xl bg-[#0b1611] border border-emerald-800/60 text-xs text-emerald-100 focus:outline-none focus:border-emerald-500">
               <option value="all">All Water Types</option>
@@ -231,47 +286,33 @@
               <option value="all">All Plants</option>
               <option value="has-reminder">Has Timed Reminder</option>
             </select>
+
+            <button type="button" onclick="clearAllRosterFilters()" class="px-3 py-2 rounded-xl bg-[#162d22] hover:bg-[#1e3d2e] text-emerald-200 border border-emerald-800/60 text-xs font-medium">
+              Reset Filters
+            </button>
           </div>
         </div>
 
         <!-- Category Filter Pills -->
         <div id="categoryPillsContainer" class="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scroll"></div>
       </div>
+    </section>
 
-      <!-- Local Weather Events & Timed Reminders Bar -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <!-- Herzliya Weather Events Card -->
-        <div id="weatherEventsCard" class="bg-[#112119] border border-emerald-900/60 rounded-2xl p-3.5 flex flex-col justify-between gap-2">
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
-              <h3 class="text-xs sm:text-sm font-bold text-white">Local Weather Events (Herzliya)</h3>
-            </div>
-            <div class="flex items-center gap-2">
-              <span id="weatherTempPill" class="text-xs font-mono px-2 py-0.5 rounded-lg bg-[#0b1611] text-sky-200 border border-sky-800/50">Loading...</span>
-              <button type="button" onclick="fetchLocalWeatherEvents()" class="text-[11px] px-2 py-0.5 rounded-lg bg-[#162d22] hover:bg-[#1e3d2e] text-emerald-200 border border-emerald-800/50">Refresh</button>
+    <!-- ==================== VIEW 1C: TIMED REMINDERS TAB (.ICS) ==================== -->
+    <section id="viewReminders" class="hidden space-y-5">
+      <div id="upcomingRemindersCard" class="bg-[#112119] border border-emerald-900/60 rounded-2xl p-4 sm:p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-900/50 pb-4">
+          <div class="flex items-center gap-2.5">
+            <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+            <div>
+              <h2 class="text-lg font-bold text-white">Timed Reminders (One-Tap iPhone Calendar)</h2>
+              <p class="text-xs text-emerald-300/70">Schedule bonsai wire inspections, seasonal pruning windows, and repotting alerts—and export any reminder to Apple Calendar (.ics) in one tap.</p>
             </div>
           </div>
-          <div id="weatherAlertsList" class="text-xs text-emerald-100/85 space-y-1">
-            Checking 7-day temperature &amp; rain forecast for plant sensitivity...
-          </div>
+          <button type="button" onclick="openQuickReminderModal()" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs sm:text-sm font-semibold shadow">+ Add Reminder</button>
         </div>
-
-        <!-- Upcoming Timed Reminders Card (with One-Tap .ics Calendar Export) -->
-        <div id="upcomingRemindersCard" class="bg-[#112119] border border-emerald-900/60 rounded-2xl p-3.5 flex flex-col justify-between gap-2">
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-              <h3 class="text-xs sm:text-sm font-bold text-white">Timed Reminders (One-Tap iPhone Calendar)</h3>
-            </div>
-            <button type="button" onclick="openQuickReminderModal()" class="text-[11px] px-2.5 py-1 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white font-semibold">+ Add Reminder</button>
-          </div>
-          <div id="upcomingRemindersList" class="space-y-1.5 max-h-28 overflow-y-auto custom-scroll"></div>
-        </div>
+        <div id="upcomingRemindersList" class="space-y-2.5"></div>
       </div>
-
-      <!-- Plant Cards Grid -->
-      <div id="plantsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </section>
 
     <!-- ==================== VIEW 2: GLOBAL EVENT LOG ==================== -->
@@ -388,6 +429,43 @@
     </section>
 
   </main>
+
+  <!-- Sticky iPhone / Mobile Bottom Tab Navigation Bar (Visible on Mobile Screens < 640px) -->
+  <nav class="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-[#0b1611]/95 backdrop-blur-lg border-t border-emerald-800/70 px-1.5 py-1.5 flex items-center justify-around shadow-2xl" aria-label="Mobile Bottom Navigation">
+    <button type="button" id="mobTabBtnRoster" onclick="switchMainView('roster')" class="flex-1 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition">
+      <div class="relative">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        <span id="mobRosterCountBadge" class="absolute -top-1.5 -right-3 px-1 rounded-full text-[9px] bg-emerald-800 text-emerald-100">19</span>
+      </div>
+      <span>Plants</span>
+    </button>
+
+    <button type="button" id="mobTabBtnSearch" onclick="switchMainView('search')" class="flex-1 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <span>Search</span>
+    </button>
+
+    <button type="button" id="mobTabBtnReminders" onclick="switchMainView('reminders')" class="flex-1 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition">
+      <div class="relative">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span id="mobRemindersCountBadge" class="absolute -top-1.5 -right-2.5 px-1 rounded-full text-[9px] bg-amber-700 text-amber-100">3</span>
+      </div>
+      <span>Reminders</span>
+    </button>
+
+    <button type="button" id="mobTabBtnLogs" onclick="switchMainView('logs')" class="flex-1 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition">
+      <div class="relative">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        <span id="mobLogCountBadge" class="absolute -top-1.5 -right-3 px-1 rounded-full text-[9px] bg-emerald-800 text-emerald-100">0</span>
+      </div>
+      <span>Event Log</span>
+    </button>
+
+    <button type="button" id="mobTabBtnPython" onclick="switchMainView('python')" class="flex-1 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      <span>Backup</span>
+    </button>
+  </nav>
 
   <!-- ==================== MODAL 1: PLANT DETAIL & EVENT LOG DRAWER ==================== -->
   <div id="plantDetailModal" class="fixed inset-0 z-40 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
@@ -891,7 +969,7 @@
   </div>
 
   <!-- Toast Notification -->
-  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 pointer-events-none flex flex-col gap-2"></div>
+  <div id="toastContainer" class="fixed bottom-16 sm:bottom-4 right-4 z-50 pointer-events-none flex flex-col gap-2"></div>
 
   <script>
     // =========================================================================
@@ -1724,6 +1802,25 @@
       };
     }
 
+    function getWaterDotInfo(waterType) {
+      if (waterType === 'Distilled Only') {
+        return {
+          dotClass: 'bg-sky-400 ring-2 ring-sky-400/30',
+          label: 'Distilled / RO Water Only'
+        };
+      }
+      if (waterType === 'pH 5.2 Adjusted') {
+        return {
+          dotClass: 'bg-purple-400 ring-2 ring-purple-400/30',
+          label: 'pH 5.2 Vinegar-Adjusted Water'
+        };
+      }
+      return {
+        dotClass: 'bg-emerald-400 ring-2 ring-emerald-400/25',
+        label: 'Standard Tap / Filtered Water'
+      };
+    }
+
     function getWaterBadgeClass(waterType) {
       if (waterType === 'Distilled Only') {
         return 'bg-sky-950/90 text-sky-300 border border-sky-600/50';
@@ -1786,8 +1883,32 @@
       }).join('');
     }
 
+    const expandedPlantIds = new Set();
+
+    function togglePlantCardExpand(plantId) {
+      if (expandedPlantIds.has(plantId)) {
+        expandedPlantIds.delete(plantId);
+      } else {
+        expandedPlantIds.add(plantId);
+      }
+      renderRoster();
+    }
+
     function selectCategoryFilter(cat) {
       selectedCategory = cat;
+      renderCategoryPills();
+      renderRoster();
+      switchMainView('roster');
+    }
+
+    function clearAllRosterFilters() {
+      selectedCategory = 'All';
+      const sInput = document.getElementById('rosterSearchInput');
+      if (sInput) sInput.value = '';
+      const wFilter = document.getElementById('waterTypeFilter');
+      if (wFilter) wFilter.value = 'all';
+      const dFilter = document.getElementById('dueStatusFilter');
+      if (dFilter) dFilter.value = 'all';
       renderCategoryPills();
       renderRoster();
     }
@@ -1798,7 +1919,23 @@
       const waterFilter = document.getElementById('waterTypeFilter')?.value || 'all';
       const dueFilter = document.getElementById('dueStatusFilter')?.value || 'all';
 
-      // Update KPIs
+      // Show or hide active filter notice bar on Roster view
+      const filterNotice = document.getElementById('activeFilterNotice');
+      const filterText = document.getElementById('activeFilterText');
+      const hasActiveFilter = selectedCategory !== 'All' || waterFilter !== 'all' || dueFilter !== 'all' || searchVal.length > 0;
+      if (filterNotice && filterText) {
+        filterNotice.classList.toggle('hidden', !hasActiveFilter);
+        if (hasActiveFilter) {
+          const parts = [];
+          if (selectedCategory !== 'All') parts.push(selectedCategory);
+          if (waterFilter !== 'all') parts.push(waterFilter);
+          if (dueFilter !== 'all') parts.push('With Reminders');
+          if (searchVal) parts.push(`"${searchVal}"`);
+          filterText.textContent = `Filter: ${parts.join(' • ')}`;
+        }
+      }
+
+      // Update KPIs & Tab Badges
       let remindersCount = 0;
       let specialWaterCount = 0;
       let totalLogsCount = 0;
@@ -1810,10 +1947,18 @@
 
       document.getElementById('kpiTotalPlants').textContent = String(plantsState.length);
       document.getElementById('rosterCountBadge').textContent = String(plantsState.length);
+      const mobRosterB = document.getElementById('mobRosterCountBadge');
+      if (mobRosterB) mobRosterB.textContent = String(plantsState.length);
       document.getElementById('kpiDueReminders').textContent = String(remindersCount);
+      const remBadge = document.getElementById('remindersCountBadge');
+      if (remBadge) remBadge.textContent = String(remindersCount);
+      const mobRemB = document.getElementById('mobRemindersCountBadge');
+      if (mobRemB) mobRemB.textContent = String(remindersCount);
       document.getElementById('kpiSpecialWater').textContent = String(specialWaterCount);
       document.getElementById('kpiTotalLogs').textContent = String(totalLogsCount);
       document.getElementById('logCountBadge').textContent = String(totalLogsCount);
+      const mobLogB = document.getElementById('mobLogCountBadge');
+      if (mobLogB) mobLogB.textContent = String(totalLogsCount);
       renderUpcomingRemindersCard();
 
       const filtered = plantsState.filter(p => {
@@ -1835,13 +1980,13 @@
       if (filtered.length === 0) {
         grid.innerHTML = `<div class="col-span-full bg-[#112119] border border-emerald-900/60 rounded-2xl p-8 text-center space-y-2">
           <p class="text-sm font-semibold text-white">No plants match your current filter</p>
-          <p class="text-xs text-emerald-300/70">Try clearing the search query or click "Add Plant + Web Lookup" to add a new species.</p>
+          <p class="text-xs text-emerald-300/70">Tap Reset or open the Search &amp; Overview tab to adjust your filter.</p>
         </div>`;
         return;
       }
 
       grid.innerHTML = filtered.map(p => {
-        const st = computeWateringStatus(p);
+        const isExpanded = expandedPlantIds.has(p.id);
         const latestLog = (p.logs && p.logs.length > 0) ? p.logs[0] : null;
         const activeWaterText = currentSeason === 'summer' ? p.summerWatering : p.winterWatering;
         const activeSeasonLabel = currentSeason === 'summer' ? 'Summer Watering' : 'Winter Watering';
@@ -1852,71 +1997,73 @@
           : getBotanicalSvg(p.svgTheme, p.name);
 
         return `
-          <article class="card-glow bg-[#112119] border border-emerald-900/60 rounded-2xl overflow-hidden flex flex-col justify-between">
-            <div>
-              <!-- Picture Banner -->
-              <div class="relative h-44 bg-[#09140f] border-b border-emerald-900/50 cursor-pointer overflow-hidden" onclick="openPlantDetailModal('${escapeHtml(p.id)}')">
+          <article class="card-glow bg-[#112119] border ${isExpanded ? 'border-emerald-500/80 col-span-2 sm:col-span-2' : 'border-emerald-900/60'} rounded-2xl overflow-hidden flex flex-col transition-all">
+            <!-- Compact Top Area: Picture + Name ONLY (Clicking toggles bottom details drawer) -->
+            <div class="cursor-pointer select-none" onclick="togglePlantCardExpand('${escapeHtml(p.id)}')">
+              <div class="relative ${isExpanded ? 'h-44' : 'h-32 sm:h-36'} bg-[#09140f] border-b border-emerald-900/40 overflow-hidden transition-all">
                 ${visualHtml}
-                <div class="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
-                  <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-black/75 text-emerald-200 backdrop-blur-sm border border-emerald-700/40">${escapeHtml(p.category)}</span>
-                  <span class="px-2 py-0.5 rounded-lg text-[10px] font-medium backdrop-blur-sm ${getWaterBadgeClass(p.waterType)}">${escapeHtml(p.waterType)}</span>
-                </div>
                 ${(p.reminders && p.reminders.length > 0)
-                  ? `<div class="absolute bottom-2.5 right-2.5">
-                      <span class="px-2.5 py-1 rounded-lg text-[11px] font-semibold shadow backdrop-blur-sm bg-amber-950/90 text-amber-200 border border-amber-600/60">⏰ ${escapeHtml(p.reminders[0].date)}</span>
+                  ? `<div class="absolute top-2 right-2">
+                      <span class="w-2.5 h-2.5 rounded-full bg-amber-400 block ring-4 ring-black/50" title="Timed reminder scheduled"></span>
                     </div>`
                   : ''}
               </div>
-
-              <!-- Card Content -->
-              <div class="p-4 space-y-3">
-                <div class="flex items-start justify-between gap-2 cursor-pointer" onclick="openPlantDetailModal('${escapeHtml(p.id)}')">
-                  <div>
-                    <h3 class="text-base font-bold text-white leading-snug hover:text-emerald-300 transition">${escapeHtml(p.name)}</h3>
-                    <p class="text-xs italic text-emerald-300/75">${escapeHtml(p.scientificName)} • <span class="not-italic text-emerald-200/70">${escapeHtml(p.location)}</span></p>
-                  </div>
+              <div class="px-3 py-2.5 flex items-center justify-between gap-1.5">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="w-2.5 h-2.5 rounded-full shrink-0 ${getWaterDotInfo(p.waterType).dotClass}" title="${escapeHtml(getWaterDotInfo(p.waterType).label)}"></span>
+                  <h3 class="text-xs sm:text-sm font-bold text-white truncate" title="${escapeHtml(p.name)} (${escapeHtml(p.waterType)})">${escapeHtml(p.name)}</h3>
                 </div>
-
-                <!-- Recommended Care Specs -->
-                <div class="space-y-2 text-xs bg-[#0b1611] p-3 rounded-xl border border-emerald-900/50">
-                  <div>
-                    <span class="font-semibold text-amber-300">Soil Mix:</span>
-                    <span class="text-emerald-100/85 ml-1">${escapeHtml(p.soilMix)}</span>
-                  </div>
-                  <div>
-                    <span class="font-semibold text-yellow-300">Sun:</span>
-                    <span class="text-emerald-100/85 ml-1">${escapeHtml(p.sunExposure)}</span>
-                  </div>
-                  <div class="pt-1 border-t border-emerald-900/50">
-                    <span class="font-semibold ${activeSeasonColor}">${activeSeasonLabel}:</span>
-                    <span class="text-emerald-100/90 ml-1">${escapeHtml(activeWaterText)}</span>
-                  </div>
-                </div>
-
-                <!-- Latest Event Log Preview -->
-                <div class="px-3 py-2 rounded-xl bg-[#0d1a14] border border-emerald-900/40 text-[11px] text-emerald-200/85">
-                  ${latestLog
-                    ? `<div class="flex items-center justify-between text-emerald-400 font-medium mb-0.5">
-                        <span>Latest: ${escapeHtml(latestLog.type)}</span>
-                        <span class="font-mono text-[10px] text-emerald-300/70">${escapeHtml(latestLog.date)}</span>
-                      </div>
-                      <p class="line-clamp-2 text-emerald-100/80">${escapeHtml(latestLog.note)}</p>`
-                    : `<span class="text-emerald-400/60">No events logged yet — click Log Event below.</span>`
-                  }
-                </div>
+                <svg class="w-4 h-4 text-emerald-400/80 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
               </div>
             </div>
 
-            <!-- Card Footer Actions -->
-            <div class="px-4 pb-3.5 pt-1 flex items-center gap-2">
-              <button type="button" onclick="openQuickReminderModal('${escapeHtml(p.id)}')" class="px-3 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-800/80 text-amber-200 border border-amber-700/50 text-xs font-medium flex items-center gap-1 transition" title="Add timed reminder & iPhone Calendar alert">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                <span>Remind</span>
-              </button>
-              <button type="button" onclick="openPlantDetailModal('${escapeHtml(p.id)}')" class="flex-1 py-1.5 px-3 rounded-xl bg-[#173024] hover:bg-emerald-700 text-emerald-100 hover:text-white border border-emerald-700/50 text-xs font-semibold flex items-center justify-center gap-1.5 transition">
-                <span>Care &amp; Event Log (${(p.logs || []).length})</span>
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
-              </button>
+            <!-- Collapsible Bottom Part: Opens when card is pressed -->
+            <div class="${isExpanded ? 'block' : 'hidden'} px-3.5 pb-3.5 pt-1 border-t border-emerald-900/50 space-y-2.5 bg-[#0d1a14]">
+              <div class="flex flex-wrap items-center justify-between gap-1.5 pt-1">
+                <span class="text-[11px] italic text-emerald-300/85">${escapeHtml(p.scientificName)}</span>
+                <div class="flex flex-wrap gap-1">
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-950 text-emerald-200 border border-emerald-700/40">${escapeHtml(p.category)}</span>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-medium ${getWaterBadgeClass(p.waterType)}">${escapeHtml(p.waterType)}</span>
+                </div>
+              </div>
+
+              <div class="text-[11px] text-emerald-200/75">📍 ${escapeHtml(p.location)}</div>
+
+              <div class="space-y-1.5 text-xs bg-[#09130e] p-2.5 rounded-xl border border-emerald-900/50">
+                <div>
+                  <span class="font-semibold text-amber-300">Soil Mix:</span>
+                  <span class="text-emerald-100/90 ml-1">${escapeHtml(p.soilMix)}</span>
+                </div>
+                <div>
+                  <span class="font-semibold text-yellow-300">Sun:</span>
+                  <span class="text-emerald-100/90 ml-1">${escapeHtml(p.sunExposure)}</span>
+                </div>
+                <div class="pt-1 border-t border-emerald-900/50">
+                  <span class="font-semibold ${activeSeasonColor}">${activeSeasonLabel}:</span>
+                  <span class="text-emerald-100/90 ml-1">${escapeHtml(activeWaterText)}</span>
+                </div>
+              </div>
+
+              ${latestLog
+                ? `<div class="px-2.5 py-1.5 rounded-xl bg-[#0b1611] border border-emerald-900/40 text-[11px] text-emerald-200/85">
+                    <div class="flex items-center justify-between text-emerald-400 font-medium">
+                      <span>Latest: ${escapeHtml(latestLog.type)}</span>
+                      <span class="font-mono text-[10px] text-emerald-300/70">${escapeHtml(latestLog.date)}</span>
+                    </div>
+                    <p class="line-clamp-2 text-emerald-100/80 mt-0.5">${escapeHtml(latestLog.note)}</p>
+                  </div>`
+                : ''
+              }
+
+              <div class="flex items-center gap-2 pt-1">
+                <button type="button" onclick="openQuickReminderModal('${escapeHtml(p.id)}')" class="px-2.5 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-800/80 text-amber-200 border border-amber-700/50 text-xs font-medium flex items-center gap-1 transition">
+                  <span>⏰ Remind</span>
+                </button>
+                <button type="button" onclick="openPlantDetailModal('${escapeHtml(p.id)}')" class="flex-1 py-1.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center gap-1 transition">
+                  <span>Full Log &amp; Photos (${(p.logs || []).length})</span>
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </div>
             </div>
           </article>`;
       }).join('');
@@ -2794,20 +2941,31 @@
     // 10. VIEW NAVIGATION, JSON EXPORT/IMPORT & RESET
     // =========================================================================
     function switchMainView(view) {
-      const views = ['roster', 'logs', 'python'];
+      const views = ['roster', 'search', 'reminders', 'logs', 'python'];
       views.forEach(v => {
-        const sec = document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1));
-        const btn = document.getElementById('tabBtn' + v.charAt(0).toUpperCase() + v.slice(1));
+        const cap = v.charAt(0).toUpperCase() + v.slice(1);
+        const sec = document.getElementById('view' + cap);
+        const btn = document.getElementById('tabBtn' + cap);
+        const mobBtn = document.getElementById('mobTabBtn' + cap);
         if (sec) sec.classList.toggle('hidden', v !== view);
         if (btn) {
           btn.className = v === view
-            ? 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-emerald-600/25 text-emerald-200 border border-emerald-500/50 flex items-center gap-1.5 transition'
-            : 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-emerald-300/70 hover:text-white flex items-center gap-1.5 transition';
+            ? 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap bg-emerald-600/25 text-emerald-200 border border-emerald-500/50 flex items-center gap-1.5 transition'
+            : 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap text-emerald-300/70 hover:text-white flex items-center gap-1.5 transition';
+        }
+        if (mobBtn) {
+          mobBtn.className = v === view
+            ? 'flex-1 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold bg-emerald-600/25 text-emerald-200 border border-emerald-500/40 transition'
+            : 'flex-1 py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-emerald-300/65 hover:text-white transition';
         }
       });
       if (view === 'logs') {
         populatePlantSelects();
         renderGlobalLogs();
+      } else if (view === 'reminders') {
+        renderUpcomingRemindersCard();
+      } else if (view === 'search') {
+        renderCategoryPills();
       }
     }
 
